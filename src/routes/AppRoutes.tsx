@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
 import { useInactivityTimeout } from "../hooks/useInactivityTimeout";
 import { ConfigInicial } from "../screens/ConfigInicial";
+import { ConfirmacionClave } from "../screens/ConfirmacionClave";
 import { Dashboard } from "../screens/Dashboard";
 import { GastosProgramados } from "../screens/GastosProgramados";
 import { Login } from "../screens/Login";
@@ -92,6 +93,14 @@ export const AppRoutes = () => (
             element={(
                 <RedirectIfAuth>
                     <RecuperarClave />
+                </RedirectIfAuth>
+            )}
+        />
+        <Route
+            path="/confirmacion-clave"
+            element={(
+                <RedirectIfAuth>
+                    <ConfirmacionClave />
                 </RedirectIfAuth>
             )}
         />

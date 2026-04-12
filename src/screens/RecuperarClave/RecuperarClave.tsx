@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getAuthErrorMessage, requestPasswordReset } from "../../services/auth.service";
 
 export const RecuperarClave = () => {
     const [email, setEmail] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
-    const [success, setSuccess] = useState(false);
+    const navigate = useNavigate();
 
     const metaDescription = useMemo(
         () => "Recupera tu acceso a Solix enviando instrucciones para restablecer tu contraseña de forma segura.",
@@ -35,7 +36,6 @@ export const RecuperarClave = () => {
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError("");
-        setSuccess(false);
 
         if (!email.trim()) {
             setError("Se necesita ingresar un correo");
@@ -46,7 +46,7 @@ export const RecuperarClave = () => {
 
         try {
             await requestPasswordReset(email);
-            setSuccess(true);
+            navigate("/confirmacion-clave");
         } catch (err) {
             setError(getAuthErrorMessage(err));
         } finally {
@@ -82,11 +82,6 @@ export const RecuperarClave = () => {
                         {error && (
                             <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]" role="alert" aria-live="polite">
                                 {error}
-                            </p>
-                        )}
-                        {success && (
-                            <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#166534]" role="status" aria-live="polite">
-                                Si el correo existe, enviamos instrucciones de recuperación.
                             </p>
                         )}
 
