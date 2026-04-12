@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ProfileMenu } from "../../components/ProfileMenu";
 import { useAuth } from "../../hooks/useAuth";
 import { getAuthErrorMessage } from "../../services/auth.service";
 
@@ -51,12 +50,15 @@ export const RegistroUsuario = () => {
                 <div className="relative z-10 flex w-full max-w-md flex-col items-start gap-8">
                     <div className="flex w-full items-center justify-center">
                         <div className="inline-flex items-center gap-2 rounded-full bg-[#dae2fd] px-4 py-2">
-                            <div className="h-8 w-8 bg-[url(/solix-logo.png)] bg-cover bg-center" />
+                            <img
+                                src="/Solix logo.webp"
+                                alt="Solix Logo"
+                                className="h-8 w-8 object-contain"
+                            />
                             <span className="[font-family:'Manrope-Bold',Helvetica] text-lg font-bold leading-7 tracking-[-0.45px] text-[#003d9b]">
                                 Solix
                             </span>
                         </div>
-                        <ProfileMenu avatarClassName="h-10 w-10" />
                     </div>
 
                     <form
