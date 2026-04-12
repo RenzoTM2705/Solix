@@ -47,23 +47,18 @@ export const RegistroUsuario = () => {
                     <div className="absolute -right-32 bottom-[-102px] h-[500px] w-[500px] rounded-full bg-[#6ffbbe33] blur-[50px]" />
                 </div>
 
-                <div className="relative z-10 flex w-full max-w-md flex-col items-start gap-8">
-                    <div className="flex w-full items-center justify-center">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-[#dae2fd] px-4 py-2">
-                            <img
-                                src="/Solix logo.webp"
-                                alt="Solix Logo"
-                                className="h-8 w-8 object-contain"
-                            />
-                            <span className="[font-family:'Manrope-Bold',Helvetica] text-lg font-bold leading-7 tracking-[-0.45px] text-[#003d9b]">
-                                Solix
-                            </span>
-                        </div>
+                <div className="relative z-10 flex w-full max-w-md flex-col items-start gap-0">
+                    <div className="flex w-full items-center justify-center py-6">
+                        <img
+                            src="/Solix logo.webp"
+                            alt="Solix Logo"
+                            className="h-32 w-32 object-contain"
+                        />
                     </div>
 
                     <form
                         onSubmit={handleSubmit}
-                        className="relative w-full rounded-[32px] border border-solid border-[#c3c6d633] bg-[#ffffffcc] p-8 backdrop-blur-md backdrop-brightness-[100%] sm:p-10 [-webkit-backdrop-filter:blur(12px)_brightness(100%)]"
+                        className="relative w-full rounded-[32px] border border-solid border-[#c3c6d633] bg-[#ffffffcc] p-8 backdrop-blur-md backdrop-brightness-[100%] sm:p-10 [-webkit-backdrop-filter:blur(12px)_brightness(100%)] mt-6"
                     >
                         <div className="pointer-events-none absolute inset-0 rounded-[32px] bg-[#ffffff01] shadow-[0px_8px_10px_-6px_#131b2e0d,0px_20px_25px_-5px_#131b2e0d]" />
 
