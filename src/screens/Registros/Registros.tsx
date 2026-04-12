@@ -1,9 +1,13 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
 import { AppTopBar } from "../../components/AppTopBar";
+import { FilterPanelRegistros } from "../../components/FilterPanelRegistros";
 import { useTransactions } from "../../hooks/useTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { Transaction, TransactionType } from "../../types/transaction";
 import { useEffect, useMemo, useState } from "react";
+import type { RegistrosFilters } from "../../utils/registrosFilters";
+import { INITIAL_REGISTROS_FILTERS, filterTransactions } from "../../utils/registrosFilters";
+import { generatePDF } from "../../utils/pdfExport";
 
 const formatCurrency = (value: number, withSign = false) => {
     const abs = Math.abs(value).toLocaleString("en-US", {
@@ -293,15 +297,21 @@ export const Registros = () => {
     const [activeTransaction, setActiveTransaction] = useState<Transaction | null>(null);
     const [form, setForm] = useState<TransactionFormState>(INITIAL_TRANSACTION_FORM);
     const [submittingForm, setSubmittingForm] = useState(false);
+    const [filters, setFilters] = useState<RegistrosFilters>(INITIAL_REGISTROS_FILTERS);
     const [currentPage, setCurrentPage] = useState(1);
+    const [showFilterPanel, setShowFilterPanel] = useState(false);
     const pageSize = 4;
 
+    const filteredData = useMemo(() => {
+        return filterTransactions(data, filters);
+    }, [data, filters]);
+
     const totals = useMemo(() => {
-        const ingresos = data
+        const ingresos = filteredData
             .filter((item) => item.tipo === "ingreso")
             .reduce((acc, item) => acc + Number(item.monto || 0), 0);
 
-        const gastos = data
+        const gastos = filteredData
             .filter((item) => item.tipo === "gasto")
             .reduce((acc, item) => acc + Number(item.monto || 0), 0);
 
@@ -310,9 +320,9 @@ export const Registros = () => {
             gastos,
             balance: ingresos - gastos,
         };
-    }, [data]);
+    }, [filteredData]);
 
-    const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
 
     useEffect(() => {
         if (currentPage > totalPages) {
@@ -322,8 +332,8 @@ export const Registros = () => {
 
     const paginatedData = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
-        return data.slice(start, start + pageSize);
-    }, [currentPage, data]);
+        return filteredData.slice(start, start + pageSize);
+    }, [currentPage, filteredData]);
 
     const pageNumbers = useMemo(() => {
         return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -457,6 +467,31 @@ export const Registros = () => {
         }
     };
 
+    const handleExportPDF = () => {
+        if (filteredData.length === 0) {
+            alert("No hay registros para exportar con los filtros aplicados.");
+            return;
+        }
+
+        const columns = [
+            { header: "Fecha", key: "fecha_formatted" },
+            { header: "Tipo", key: "tipo_display" },
+            { header: "Categoría", key: "categoria" },
+            { header: "Descripción", key: "descripcion" },
+            { header: "Monto", key: "monto_formatted" },
+        ];
+
+        const rows = filteredData.map((tx) => ({
+            fecha_formatted: new Date(tx.fecha).toLocaleDateString("es-PE"),
+            tipo_display: tx.tipo === "ingreso" ? "Ingreso" : "Gasto",
+            categoria: tx.categoria,
+            descripcion: tx.descripcion,
+            monto_formatted: formatCurrency(tx.tipo === "ingreso" ? tx.monto : -tx.monto, true),
+        }));
+
+        generatePDF("Reporte de Transacciones", columns, rows, "reporte-transacciones");
+    };
+
     return (
         <div className="main-container relative flex w-full min-h-screen flex-col items-start bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
             <DashboardSidebar />
@@ -496,6 +531,8 @@ export const Registros = () => {
                         </p>
                     )}
 
+
+
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 self-stretch shrink-0 relative z-[73]">
                         <div className="flex flex-col gap-[8px] items-start bg-[#fff] rounded-[32px] p-6 border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[74]">
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[75]">
@@ -534,30 +571,44 @@ export const Registros = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap bg-[#fff] rounded-[32px] border-solid border border-[rgba(195,198,214,0.1)] relative overflow-hidden shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[89]">
-                        <div className="flex pt-[24px] pr-[32px] pb-[24px] pl-[32px] justify-between items-center self-stretch shrink-0 flex-nowrap bg-[rgba(242,243,255,0.5)] relative z-[90]">
-                            <div className="flex w-[164.28px] flex-col items-start shrink-0 flex-nowrap relative z-[91]">
-                                <span className="h-[28px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-[28px] text-[#131b2e] relative text-left whitespace-nowrap z-[92]">
+                    <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap bg-[#fff] rounded-[32px] border-solid border border-[rgba(195,198,214,0.1)] relative overflow-visible shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
+                        <div className="relative z-[300] flex w-full flex-col gap-3 bg-[rgba(242,243,255,0.5)] px-4 py-4 sm:flex-row sm:items-center sm:px-6">
+                            <div className="flex min-w-0 flex-1 flex-col items-start shrink-0 flex-nowrap">
+                                <span className="h-[28px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-[28px] text-[#131b2e] text-left whitespace-nowrap">
                                     Actividad Reciente
                                 </span>
                             </div>
-                            <div className="flex w-[149.693px] gap-[16px] items-start shrink-0 flex-nowrap relative z-[93]">
-                                <div className="flex w-[58.23px] gap-[8px] items-center shrink-0 flex-nowrap relative z-[94]">
-                                    <div className="flex w-[10.5px] flex-col items-center shrink-0 flex-nowrap relative z-[95]">
-                                        <div className="w-[10.5px] h-[7px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/VJYcxW5iNX.png)] bg-cover bg-no-repeat relative z-[96]" />
+                            <div className="relative z-[301] ml-auto flex w-full shrink-0 flex-nowrap items-center justify-end gap-[16px] sm:w-auto">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFilterPanel(!showFilterPanel)}
+                                    className="flex gap-[8px] items-center shrink-0 flex-nowrap cursor-pointer hover:opacity-70 transition-opacity"
+                                >
+                                    <div className="flex w-[10.5px] flex-col items-center shrink-0 flex-nowrap">
+                                        <div className="w-[10.5px] h-[7px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/VJYcxW5iNX.png)] bg-cover bg-no-repeat" />
                                     </div>
-                                    <span className="flex w-[39.73px] h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] relative text-center whitespace-nowrap z-[97]">
+                                    <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] text-center whitespace-nowrap">
                                         Filtrar
                                     </span>
-                                </div>
-                                <div className="flex w-[75.463px] gap-[8px] items-center shrink-0 flex-nowrap relative z-[98]">
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleExportPDF}
+                                    className="flex gap-[8px] items-center shrink-0 flex-nowrap relative z-[122] cursor-pointer hover:opacity-70 transition-opacity"
+                                >
                                     <div className="flex w-[9.333px] flex-col items-center shrink-0 flex-nowrap relative z-[99]">
                                         <div className="w-[9.333px] h-[9.333px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/rGTigOR2Nd.png)] bg-cover bg-no-repeat relative z-[100]" />
                                     </div>
-                                    <span className="flex w-[58.13px] h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] relative text-center whitespace-nowrap z-[101]">
+                                    <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] relative text-center whitespace-nowrap z-[101]">
                                         Exportar
                                     </span>
-                                </div>
+                                </button>
+                                <FilterPanelRegistros 
+                                    filters={filters} 
+                                    onFiltersChange={setFilters}
+                                    isOpen={showFilterPanel}
+                                    onClose={() => setShowFilterPanel(false)}
+                                />
                             </div>
                         </div>
                         <div className="w-full overflow-x-auto">
@@ -620,7 +671,7 @@ export const Registros = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex px-4 py-4 sm:px-8 sm:py-6 flex-col gap-3 sm:flex-row sm:justify-between sm:items-center self-stretch shrink-0 flex-nowrap bg-[rgba(242,243,255,0.2)] relative z-[179]">
+                        <div className="flex px-4 py-4 sm:px-8 sm:py-6 flex-col gap-3 sm:flex-row sm:justify-between sm:items-center self-stretch shrink-0 flex-nowrap bg-[rgba(242,243,255,0.2)] relative z-[20]">
                             <div className="flex w-full sm:w-[234.08px] flex-col items-start shrink-0 flex-nowrap relative z-[180]">
                                 <span className="h-[20px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#434654] relative text-left whitespace-nowrap z-[181]">
                                     Mostrando {paginatedData.length} de {data.length} transacciones

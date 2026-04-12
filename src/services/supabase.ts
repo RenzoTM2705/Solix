@@ -5,20 +5,27 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase: SupabaseClient | null = isSupabaseConfigured
-    ? createClient(supabaseUrl, supabaseAnonKey, {
-          auth: {
-              persistSession: true,
-              autoRefreshToken: true,
-              detectSessionInUrl: true,
-          },
-      })
-    : null;
+// Singleton pattern para evitar múltiples instancias
+let supabaseInstance: SupabaseClient | null = null;
 
-export const getSupabaseClient = () => {
-    if (!supabase) {
+export const getSupabaseClient = (): SupabaseClient => {
+    if (!isSupabaseConfigured) {
         throw new Error("Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en .env.local para usar autenticacion.");
     }
 
-    return supabase;
+    if (!supabaseInstance) {
+        supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                flowType: "pkce", // Recomendado para SPA
+            },
+        });
+    }
+
+    return supabaseInstance;
 };
+
+// Exportar como comodo acceso
+export const supabase = isSupabaseConfigured ? getSupabaseClient() : null;

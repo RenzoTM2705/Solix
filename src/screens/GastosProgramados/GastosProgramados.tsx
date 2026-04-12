@@ -1,9 +1,13 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
 import { AppTopBar } from "../../components/AppTopBar";
+import { FilterPanelGastos } from "../../components/FilterPanelGastos";
 import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { ScheduledTransaction } from "../../types/scheduledTransaction";
 import { useEffect, useMemo, useState } from "react";
+import type { GastosFilters } from "../../utils/gastosFilters";
+import { INITIAL_GASTOS_FILTERS, filterScheduledTransactions } from "../../utils/gastosFilters";
+import { generatePDF } from "../../utils/pdfExport";
 
 const formatCurrency = (value: number, withSign = false) => {
     const abs = Math.abs(value).toLocaleString("en-US", {
@@ -236,15 +240,21 @@ export const GastosProgramados = () => {
     const [form, setForm] = useState<ScheduledExpenseForm>(INITIAL_FORM);
     const [submittingForm, setSubmittingForm] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [filters, setFilters] = useState<GastosFilters>(INITIAL_GASTOS_FILTERS);
+    const [showFilterPanel, setShowFilterPanel] = useState(false);
     const pageSize = 4;
+
+    const filteredData = useMemo(() => {
+        return filterScheduledTransactions(data, filters);
+    }, [data, filters]);
 
     const totals = useMemo(() => {
         const now = new Date();
         const limit = new Date(now);
         limit.setDate(limit.getDate() + 30);
 
-        const pendingItems = data.filter((item) => item.estado === "pendiente");
-        const paidItems = data.filter((item) => item.estado === "pagado");
+        const pendingItems = filteredData.filter((item) => item.estado === "pendiente");
+        const paidItems = filteredData.filter((item) => item.estado === "pagado");
         const upcomingItems = pendingItems.filter((item) => {
             const parsed = new Date(item.fecha_programada);
             return !Number.isNaN(parsed.getTime()) && parsed >= now && parsed <= limit;
@@ -258,9 +268,9 @@ export const GastosProgramados = () => {
             inactiveTotal: paidItems.reduce((sum, item) => sum + Number(item.monto || 0), 0),
             inactiveCount: paidItems.length,
         };
-    }, [data]);
+    }, [filteredData]);
 
-    const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
 
     useEffect(() => {
         if (currentPage > totalPages) {
@@ -270,8 +280,8 @@ export const GastosProgramados = () => {
 
     const paginatedData = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
-        return data.slice(start, start + pageSize);
-    }, [currentPage, data]);
+        return filteredData.slice(start, start + pageSize);
+    }, [currentPage, filteredData]);
 
     const pageNumbers = useMemo(() => {
         return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -403,6 +413,31 @@ export const GastosProgramados = () => {
         }
     };
 
+    const handleExportPDF = () => {
+        if (filteredData.length === 0) {
+            alert("No hay gastos programados para exportar con los filtros aplicados.");
+            return;
+        }
+
+        const columns = [
+            { header: "Descripción", key: "descripcion" },
+            { header: "Categoría", key: "categoria" },
+            { header: "Monto", key: "monto_formatted" },
+            { header: "Fecha Programada", key: "fecha_programada_formatted" },
+            { header: "Estado", key: "estado_display" },
+        ];
+
+        const rows = filteredData.map((item) => ({
+            descripcion: item.descripcion,
+            categoria: item.categoria,
+            monto_formatted: formatCurrency(item.monto),
+            fecha_programada_formatted: new Date(item.fecha_programada).toLocaleDateString("es-PE"),
+            estado_display: item.estado === "pagado" ? "Pagado" : "Pendiente",
+        }));
+
+        generatePDF("Reporte de Gastos Programados", columns, rows, "reporte-gastos-programados");
+    };
+
     useEffect(() => {
         const pageTitle = "Gastos Programados | Solix";
         const pageDescription =
@@ -500,16 +535,18 @@ export const GastosProgramados = () => {
                             </p>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={handleAddScheduledTransaction}
-                            disabled={submittingForm}
-                            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#003d9b] px-6 py-3 text-white shadow-[0_8px_10px_0_rgba(0,61,155,0.25)] disabled:opacity-60"
-                        >
-                            <span className="[font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-6">
-                                Agregar gasto programado
-                            </span>
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={handleAddScheduledTransaction}
+                                disabled={submittingForm}
+                                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#003d9b] px-6 py-3 text-white shadow-[0_8px_10px_0_rgba(0,61,155,0.25)] disabled:opacity-60"
+                            >
+                                <span className="[font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-6">
+                                    Agregar gasto programado
+                                </span>
+                            </button>
+                        </div>
                     </div>
 
                     {(error || actionError) && (
@@ -517,6 +554,8 @@ export const GastosProgramados = () => {
                             {actionError || error}
                         </p>
                     )}
+
+
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <article className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
@@ -556,28 +595,42 @@ export const GastosProgramados = () => {
                         </article>
                     </div>
 
-                    <div className="overflow-hidden rounded-[32px] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
+                    <div className="overflow-visible rounded-[32px] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                         <div className="flex flex-col gap-3 bg-[rgba(242,243,255,0.5)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                             <h2 className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
                                 Lista de Gastos Programados
                             </h2>
-                            <div className="flex w-[149.693px] gap-[16px] items-start shrink-0 flex-nowrap relative z-[93]">
-                                <div className="flex w-[58.23px] gap-[8px] items-center shrink-0 flex-nowrap relative z-[94]">
-                                    <div className="flex w-[10.5px] flex-col items-center shrink-0 flex-nowrap relative z-[95]">
-                                        <div className="w-[10.5px] h-[7px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/VJYcxW5iNX.png)] bg-cover bg-no-repeat relative z-[96]" />
+                            <div className="relative ml-auto flex w-full shrink-0 flex-nowrap items-center justify-end gap-[16px] sm:w-auto">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFilterPanel(!showFilterPanel)}
+                                    className="flex gap-[8px] items-center shrink-0 flex-nowrap cursor-pointer hover:opacity-70 transition-opacity"
+                                >
+                                    <div className="flex w-[10.5px] flex-col items-center shrink-0 flex-nowrap">
+                                        <div className="w-[10.5px] h-[7px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/VJYcxW5iNX.png)] bg-cover bg-no-repeat" />
                                     </div>
-                                    <span className="flex w-[39.73px] h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] relative text-center whitespace-nowrap z-[97]">
+                                    <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] text-center whitespace-nowrap">
                                         Filtrar
                                     </span>
-                                </div>
-                                <div className="flex w-[75.463px] gap-[8px] items-center shrink-0 flex-nowrap relative z-[98]">
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleExportPDF}
+                                    className="flex gap-[8px] items-center shrink-0 flex-nowrap relative z-[98] cursor-pointer hover:opacity-70 transition-opacity"
+                                >
                                     <div className="flex w-[9.333px] flex-col items-center shrink-0 flex-nowrap relative z-[99]">
                                         <div className="w-[9.333px] h-[9.333px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/rGTigOR2Nd.png)] bg-cover bg-no-repeat relative z-[100]" />
                                     </div>
-                                    <span className="flex w-[58.13px] h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] relative text-center whitespace-nowrap z-[101]">
+                                    <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] relative text-center whitespace-nowrap z-[101]">
                                         Exportar
                                     </span>
-                                </div>
+                                </button>
+                                <FilterPanelGastos 
+                                    filters={filters} 
+                                    onFiltersChange={setFilters}
+                                    isOpen={showFilterPanel}
+                                    onClose={() => setShowFilterPanel(false)}
+                                />
                             </div>
                         </div>
 

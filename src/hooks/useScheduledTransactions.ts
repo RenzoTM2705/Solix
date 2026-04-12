@@ -8,7 +8,6 @@ import {
 } from "../services/scheduledTransactions.service";
 import type {
     ScheduledTransaction,
-    CreateScheduledTransactionInput,
     UpdateScheduledTransactionInput,
 } from "../types/scheduledTransaction";
 
