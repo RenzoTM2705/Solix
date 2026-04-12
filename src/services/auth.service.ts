@@ -80,7 +80,22 @@ export const signIn = async (email: string, password: string, rememberMe: boolea
 
 export const requestPasswordReset = async (email: string) => {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/cambiar-clave`,
+    });
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
+};
+
+export const updatePassword = async (newPassword: string) => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+    });
 
     if (error) {
         throw error;
