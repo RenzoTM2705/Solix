@@ -1,5 +1,5 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
-import { ProfileMenu } from "../../components/ProfileMenu";
+import { AppTopBar } from "../../components/AppTopBar";
 import { useTransactions } from "../../hooks/useTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { Transaction, TransactionType } from "../../types/transaction";
@@ -452,37 +452,8 @@ export const Registros = () => {
         <div className="main-container relative flex w-full min-h-screen flex-col items-start bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
             <DashboardSidebar />
             <div className="flex min-h-screen w-full pt-0 pr-0 pb-[2px] pl-0 flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[47] lg:w-[calc(100%-288px)] lg:ml-[288px]">
-                <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 self-stretch shrink-0 flex-nowrap bg-[rgba(250,248,255,0.8)] relative z-[300]">
-                    <div className="flex w-full pt-0 pr-0 pb-0 pl-0 items-center shrink-0 flex-nowrap relative z-[49] sm:w-auto sm:pr-[32px]">
-                        <div className="flex w-[102.88px] gap-[12px] items-center shrink-0 flex-nowrap relative z-50">
-                            <div className="w-[32px] h-[32px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/kMiBtgf6O5.png)] bg-cover bg-no-repeat relative overflow-hidden z-[51]" />
-                            <div className="flex w-[58.88px] flex-col items-start shrink-0 flex-nowrap relative z-[52]">
-                                <span className="h-[32px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-[32px] text-[#003d9b] relative text-left whitespace-nowrap z-[53]">
-                                    Solix
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex w-full gap-[12px] items-center justify-between shrink-0 flex-nowrap relative z-[54] sm:w-auto sm:gap-[24px] sm:justify-start">
-                        <div className="flex w-full flex-col items-start shrink-0 flex-nowrap relative z-[55] sm:w-[256px]">
-                            <div className="flex w-full pt-[6px] pr-[16px] pb-[7px] pl-[40px] justify-center items-start shrink-0 flex-nowrap bg-[#f2f3ff] rounded-full relative overflow-hidden z-[56]">
-                                <div className="flex flex-col items-start grow shrink-0 basis-0 flex-nowrap relative overflow-hidden z-[57]">
-                                    <span className="h-[19px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[14px] font-medium leading-[19px] text-[#6b7280] tracking-[-0.35px] relative text-left whitespace-nowrap z-[58]">
-                                        Buscar transacciones...
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex w-[18px] h-[24px] flex-col items-start shrink-0 flex-nowrap absolute top-[12.5%] left-[12px] z-[59]">
-                                <div className="w-[18px] h-[18px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/aZJvn3mY54.png)] bg-cover bg-no-repeat relative z-[60]" />
-                            </div>
-                        </div>
-                        <div className="flex w-[32px] pt-[8px] pr-[8px] pb-[8px] pl-[8px] flex-col justify-center items-center shrink-0 flex-nowrap rounded-full relative z-[61]">
-                            <div className="flex w-[16px] justify-center items-start shrink-0 flex-nowrap relative z-[62]">
-                                <div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AfdAwGr5cL.png)] bg-cover bg-no-repeat relative z-[63]" />
-                            </div>
-                        </div>
-                        <ProfileMenu avatarClassName="h-8 w-8" />
-                    </div>
+                <div className="relative z-[300] w-full">
+                    <AppTopBar />
                 </div>
                 <div className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 items-start self-stretch shrink-0 flex-nowrap relative z-[66]">
                     <div className="flex flex-col gap-4 self-stretch shrink-0 flex-nowrap relative z-[67] sm:flex-row sm:items-end sm:justify-between">
