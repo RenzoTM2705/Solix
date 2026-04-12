@@ -62,6 +62,143 @@ const getCategoryIcon = (tipo: TransactionType) => {
 
 const TABLE_GRID_CLASS = "grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr_0.8fr]";
 
+type TransactionModalMode = "add" | "edit";
+
+type TransactionFormState = {
+    tipo: TransactionType;
+    categoria: string;
+    descripcion: string;
+    monto: string;
+};
+
+const INITIAL_TRANSACTION_FORM: TransactionFormState = {
+    tipo: "gasto",
+    categoria: "",
+    descripcion: "",
+    monto: "",
+};
+
+const TransactionModal = ({
+    open,
+    mode,
+    form,
+    error,
+    submitting,
+    onClose,
+    onChange,
+    onSubmit,
+}: {
+    open: boolean;
+    mode: TransactionModalMode;
+    form: TransactionFormState;
+    error: string;
+    submitting: boolean;
+    onClose: () => void;
+    onChange: (field: keyof TransactionFormState, value: string) => void;
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+}) => {
+    if (!open) {
+        return null;
+    }
+
+    return (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-[rgba(19,27,46,0.45)] px-4">
+            <form
+                onSubmit={onSubmit}
+                className="w-full max-w-[520px] rounded-[32px] border border-[rgba(195,198,214,0.2)] bg-white p-6 shadow-[0_30px_60px_0_rgba(19,27,46,0.18)] sm:p-8"
+            >
+                <div className="mb-5 flex items-center justify-between">
+                    <h3 className="[font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-[32px] text-[#131b2e]">
+                        {mode === "add" ? "Agregar Registro" : "Editar Registro"}
+                    </h3>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-full px-3 py-1 [font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold text-[#434654] hover:bg-[#f2f3ff]"
+                    >
+                        Cerrar
+                    </button>
+                </div>
+
+                {error && (
+                    <p className="mb-4 [font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">{error}</p>
+                )}
+
+                <div className="grid grid-cols-1 gap-4">
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Tipo
+                        </span>
+                        <select
+                            value={form.tipo}
+                            onChange={(e) => onChange("tipo", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        >
+                            <option value="ingreso">Ingreso</option>
+                            <option value="gasto">Gasto</option>
+                        </select>
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Categoría
+                        </span>
+                        <input
+                            type="text"
+                            value={form.categoria}
+                            onChange={(e) => onChange("categoria", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Descripción
+                        </span>
+                        <input
+                            type="text"
+                            value={form.descripcion}
+                            onChange={(e) => onChange("descripcion", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Monto
+                        </span>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={form.monto}
+                            onChange={(e) => onChange("monto", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+                </div>
+
+                <div className="mt-6 flex items-center justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-full border border-[rgba(195,198,214,0.5)] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#434654]"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="rounded-full bg-[#003d9b] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-white disabled:opacity-60"
+                    >
+                        {submitting ? "Guardando..." : mode === "add" ? "Agregar" : "Guardar"}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
 const TransactionRow = ({
     transaction,
     onEdit,
@@ -130,7 +267,11 @@ const TransactionRow = ({
 export const Registros = () => {
     const { data, loading, error, addTransaction, editTransaction } = useTransactions();
     const [actionError, setActionError] = useState("");
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<TransactionModalMode>("add");
+    const [activeTransaction, setActiveTransaction] = useState<Transaction | null>(null);
+    const [form, setForm] = useState<TransactionFormState>(INITIAL_TRANSACTION_FORM);
+    const [submittingForm, setSubmittingForm] = useState(false);
 
     const totals = useMemo(() => {
         const ingresos = data
@@ -150,101 +291,99 @@ export const Registros = () => {
 
     const handleAddRegistro = async () => {
         setActionError("");
+        setModalMode("add");
+        setActiveTransaction(null);
+        setForm(INITIAL_TRANSACTION_FORM);
+        setModalOpen(true);
+    };
 
-        const tipoInput = window.prompt("Tipo de movimiento: ingreso o gasto", "gasto");
-        if (!tipoInput) {
+    const handleEditRegistro = (transaction: Transaction) => {
+        setActionError("");
+        setModalMode("edit");
+        setActiveTransaction(transaction);
+        setForm({
+            tipo: transaction.tipo,
+            categoria: transaction.categoria,
+            descripcion: transaction.descripcion,
+            monto: String(transaction.monto),
+        });
+        setModalOpen(true);
+    };
+
+    const handleFormChange = (field: keyof TransactionFormState, value: string) => {
+        setForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const handleCloseModal = () => {
+        if (submittingForm) {
             return;
         }
 
-        const tipo = tipoInput.toLowerCase().trim();
+        setModalOpen(false);
+        setActiveTransaction(null);
+        setForm(INITIAL_TRANSACTION_FORM);
+    };
+
+    const handleSubmitModal = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        setActionError("");
+
+        const tipo = form.tipo;
         if (tipo !== "ingreso" && tipo !== "gasto") {
             setActionError("El tipo debe ser ingreso o gasto.");
             return;
         }
 
-        const categoria = window.prompt("Categoría", "General")?.trim() ?? "";
+        const categoria = form.categoria.trim();
         if (!categoria) {
             setActionError("La categoría es obligatoria.");
             return;
         }
 
-        const descripcion = window.prompt("Descripción", "")?.trim() ?? "";
+        const descripcion = form.descripcion.trim();
         if (!descripcion) {
             setActionError("La descripción es obligatoria.");
             return;
         }
 
-        const montoRaw = window.prompt("Monto (solo número)", "0")?.trim() ?? "";
-        const monto = Number(montoRaw);
+        const monto = Number(form.monto);
 
         if (!Number.isFinite(monto) || monto <= 0) {
             setActionError("El monto debe ser un número mayor que 0.");
             return;
         }
 
-        try {
-            await addTransaction({
-                fecha: new Date().toISOString(),
-                tipo,
-                categoria,
-                descripcion,
-                monto,
-            });
-        } catch (err) {
-            setActionError(getAuthErrorMessage(err));
-        }
-    };
-
-    const handleEditRegistro = async (transaction: Transaction) => {
-        setActionError("");
-
-        const tipoInput = window
-            .prompt("Tipo de movimiento: ingreso o gasto", transaction.tipo)
-            ?.toLowerCase()
-            .trim();
-
-        if (!tipoInput) {
-            return;
-        }
-
-        if (tipoInput !== "ingreso" && tipoInput !== "gasto") {
-            setActionError("El tipo debe ser ingreso o gasto.");
-            return;
-        }
-
-        const categoria = window.prompt("Categoría", transaction.categoria)?.trim() ?? "";
-        if (!categoria) {
-            setActionError("La categoría es obligatoria.");
-            return;
-        }
-
-        const descripcion = window.prompt("Descripción", transaction.descripcion)?.trim() ?? "";
-        if (!descripcion) {
-            setActionError("La descripción es obligatoria.");
-            return;
-        }
-
-        const montoRaw = window.prompt("Monto (solo número)", String(transaction.monto))?.trim() ?? "";
-        const monto = Number(montoRaw);
-
-        if (!Number.isFinite(monto) || monto <= 0) {
-            setActionError("El monto debe ser un número mayor que 0.");
-            return;
-        }
-
-        setEditingId(transaction.id);
+        setSubmittingForm(true);
 
         try {
-            await editTransaction(transaction.id, {
-                tipo: tipoInput,
-                categoria,
-                descripcion,
-                monto,
-            });
+            if (modalMode === "add") {
+                await addTransaction({
+                    fecha: new Date().toISOString(),
+                    tipo,
+                    categoria,
+                    descripcion,
+                    monto,
+                });
+            } else if (activeTransaction) {
+                await editTransaction(activeTransaction.id, {
+                    tipo,
+                    categoria,
+                    descripcion,
+                    monto,
+                });
+            }
+
+            setModalOpen(false);
+            setActiveTransaction(null);
+            setForm(INITIAL_TRANSACTION_FORM);
         } catch (err) {
             setActionError(getAuthErrorMessage(err));
         } finally {
-            setEditingId(null);
+            setSubmittingForm(false);
         }
     };
 
@@ -435,7 +574,7 @@ export const Registros = () => {
                                                 key={transaction.id}
                                                 transaction={transaction}
                                                 onEdit={handleEditRegistro}
-                                                disabled={editingId === transaction.id}
+                                                disabled={submittingForm}
                                             />
                                         ))
                                     )}
@@ -479,6 +618,17 @@ export const Registros = () => {
                     </div>
                 </div>
             </div>
+
+            <TransactionModal
+                open={modalOpen}
+                mode={modalMode}
+                form={form}
+                error={actionError}
+                submitting={submittingForm}
+                onClose={handleCloseModal}
+                onChange={handleFormChange}
+                onSubmit={handleSubmitModal}
+            />
         </div>
     );
 };
