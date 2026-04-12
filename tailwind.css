@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@import "tailwindcss/base";
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
 
