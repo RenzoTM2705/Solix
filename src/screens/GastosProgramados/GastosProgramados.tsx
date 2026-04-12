@@ -1,4 +1,5 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
+import { ProfileMenu } from "../../components/ProfileMenu";
 import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { ScheduledTransaction } from "../../types/scheduledTransaction";
@@ -493,9 +494,7 @@ export const GastosProgramados = () => {
                                 <div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AfdAwGr5cL.png)] bg-cover bg-no-repeat relative z-[63]" />
                             </div>
                         </div>
-                        <div className="flex w-[32px] h-[32px] flex-col items-start shrink-0 flex-nowrap bg-[rgba(255,255,255,0)] rounded-full border-2 border-[rgba(0,82,204,0.2)] relative overflow-hidden shadow-[0_0_0_0_#dae2ff] z-[64]">
-                            <div className="w-[32px] h-[32px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GtEyW4VDxX.png)] bg-cover bg-no-repeat relative overflow-hidden z-[65]" />
-                        </div>
+                        <ProfileMenu avatarClassName="h-8 w-8" />
                     </div>
                 </header>
 
