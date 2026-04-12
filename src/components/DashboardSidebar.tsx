@@ -11,7 +11,7 @@ export const DashboardSidebar = () => {
         "shrink-0 flex items-center gap-3 rounded-full px-4 py-3 transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]";
 
     return (
-        <aside className="relative z-20 flex w-full flex-col gap-2 bg-[#f2f3ff] px-4 py-4 lg:absolute lg:left-0 lg:top-0 lg:min-h-screen lg:w-[288px] lg:px-6 lg:py-6">
+        <aside className="relative z-20 flex w-full flex-col gap-2 bg-[#f2f3ff] px-4 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:w-[288px] lg:overflow-y-auto lg:px-6 lg:py-6">
             <div className="flex items-start gap-3 pb-3 lg:pb-6">
                 <a
                     href="/dashboard"
@@ -22,9 +22,6 @@ export const DashboardSidebar = () => {
                     <div className="flex flex-col">
                         <span className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#003d9b]">
                             Solix
-                        </span>
-                        <span className="[font-family:'Inter-Regular',Helvetica] text-[10px] font-medium uppercase tracking-[0.5px] text-[#64748b]">
-                            Libro mayor etereo
                         </span>
                     </div>
                 </a>
