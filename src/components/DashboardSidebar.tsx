@@ -1,6 +1,10 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 export const DashboardSidebar = () => {
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+
     const primaryItems = [
         { label: "Tablero", icon: "hX43M1ppbz.png", to: "/dashboard" },
         { label: "Registros", icon: "XBTeeWFNKO.png", to: "/registros" },
@@ -9,6 +13,15 @@ export const DashboardSidebar = () => {
 
     const navItemBaseClass =
         "shrink-0 flex items-center gap-3 rounded-full px-4 py-3 transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]";
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate("/", { replace: true });
+        } catch (err) {
+            console.error("No se pudo cerrar sesion", err);
+        }
+    };
 
     return (
         <aside className="relative z-20 flex w-full flex-col gap-2 bg-[#f2f3ff] px-4 py-4 lg:absolute lg:left-0 lg:top-0 lg:min-h-screen lg:w-[288px] lg:px-6 lg:py-6">
@@ -67,6 +80,7 @@ export const DashboardSidebar = () => {
                 <button
                     type="button"
                     aria-label="Cerrar sesion"
+                    onClick={handleLogout}
                     className="shrink-0 w-full flex items-center gap-3 rounded-full px-4 py-3 text-[#434654] transition-all duration-200 hover:bg-white/80 hover:text-[#0052cc] hover:shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc] lg:mt-2"
                 >
                     <div

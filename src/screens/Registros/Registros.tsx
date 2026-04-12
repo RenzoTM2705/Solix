@@ -1,6 +1,179 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
+import { useTransactions } from "../../hooks/useTransactions";
+import { getAuthErrorMessage } from "../../services/auth.service";
+import type { Transaction, TransactionType } from "../../types/transaction";
+import { useMemo, useState } from "react";
+
+const formatCurrency = (value: number, withSign = false) => {
+    const abs = Math.abs(value).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    if (!withSign) {
+        return `S/${abs}`;
+    }
+
+    const prefix = value >= 0 ? "+" : "-";
+    return `${prefix}S/${abs}`;
+};
+
+const parseDate = (fecha: string) => {
+    const parsed = new Date(fecha);
+    if (Number.isNaN(parsed.getTime())) {
+        return { primary: fecha, year: "" };
+    }
+
+    const primary = parsed
+        .toLocaleDateString("es-PE", {
+            day: "2-digit",
+            month: "short",
+        })
+        .replace(".", "")
+        .replace(" ", " ");
+
+    return {
+        primary: `${primary},`,
+        year: String(parsed.getFullYear()),
+    };
+};
+
+const getCategoryIcon = (tipo: TransactionType) => {
+    if (tipo === "ingreso") {
+        return {
+            wrapperClass: "bg-[rgba(0,108,73,0.1)]",
+            iconUrl:
+                "https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/BxktpAcur9.png",
+            labelBg: "bg-[#6cf8bb]",
+            labelText: "text-[#00714d]",
+            amountText: "text-[#006c49]",
+        };
+    }
+
+    return {
+        wrapperClass: "bg-[rgba(186,26,26,0.1)]",
+        iconUrl:
+            "https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/BEyZymh1HQ.png",
+        labelBg: "bg-[#ffdad6]",
+        labelText: "text-[#93000a]",
+        amountText: "text-[#ba1a1a]",
+    };
+};
+
+const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
+    const date = parseDate(transaction.fecha);
+    const styles = getCategoryIcon(transaction.tipo);
+
+    return (
+        <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative">
+            <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative">
+                <span className="flex min-h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden">
+                    {date.primary}
+                    <br />
+                    {date.year}
+                </span>
+            </div>
+            <div className="flex w-full pt-[32.5px] pr-[32px] pb-[32.5px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative">
+                <div className={`flex min-w-[69px] pt-[4px] pr-[12px] pb-[4px] pl-[12px] items-center shrink-0 flex-nowrap rounded-full relative ${styles.labelBg}`}>
+                    <span className={`h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] tracking-[0.6px] relative text-left uppercase whitespace-nowrap ${styles.labelText}`}>
+                        {transaction.tipo}
+                    </span>
+                </div>
+            </div>
+            <div className="flex w-full pt-0 pr-0 pb-0 pl-[32px] gap-[12px] items-center shrink-0 flex-nowrap relative">
+                <div className={`flex w-[30px] h-[32px] justify-center items-center shrink-0 flex-nowrap rounded-full relative ${styles.wrapperClass}`}>
+                    <div
+                        className="w-[10px] h-[11px] shrink-0 bg-cover bg-no-repeat"
+                        style={{ backgroundImage: `url(${styles.iconUrl})` }}
+                    />
+                </div>
+                <div className="flex w-full pr-2 flex-col items-start shrink-0 flex-nowrap relative">
+                    <span className="flex min-h-[20px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#131b2e] relative text-left overflow-hidden">
+                        {transaction.categoria}
+                    </span>
+                </div>
+            </div>
+            <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[63.99px] flex-col items-start shrink-0 flex-nowrap relative">
+                <span className="flex min-h-[20px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden">
+                    {transaction.descripcion}
+                </span>
+            </div>
+            <div className="flex w-full pt-[30.5px] pr-[32px] pb-[30.5px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative">
+                <span className={`flex h-[28px] justify-end items-center shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold leading-[28px] relative text-right whitespace-nowrap ${styles.amountText}`}>
+                    {formatCurrency(transaction.tipo === "ingreso" ? transaction.monto : -transaction.monto, true)}
+                </span>
+            </div>
+        </div>
+    );
+};
 
 export const Registros = () => {
+    const { data, loading, error, addTransaction } = useTransactions();
+    const [actionError, setActionError] = useState("");
+
+    const totals = useMemo(() => {
+        const ingresos = data
+            .filter((item) => item.tipo === "ingreso")
+            .reduce((acc, item) => acc + Number(item.monto || 0), 0);
+
+        const gastos = data
+            .filter((item) => item.tipo === "gasto")
+            .reduce((acc, item) => acc + Number(item.monto || 0), 0);
+
+        return {
+            ingresos,
+            gastos,
+            balance: ingresos - gastos,
+        };
+    }, [data]);
+
+    const handleAddRegistro = async () => {
+        setActionError("");
+
+        const tipoInput = window.prompt("Tipo de movimiento: ingreso o gasto", "gasto");
+        if (!tipoInput) {
+            return;
+        }
+
+        const tipo = tipoInput.toLowerCase().trim();
+        if (tipo !== "ingreso" && tipo !== "gasto") {
+            setActionError("El tipo debe ser ingreso o gasto.");
+            return;
+        }
+
+        const categoria = window.prompt("Categoría", "General")?.trim() ?? "";
+        if (!categoria) {
+            setActionError("La categoría es obligatoria.");
+            return;
+        }
+
+        const descripcion = window.prompt("Descripción", "")?.trim() ?? "";
+        if (!descripcion) {
+            setActionError("La descripción es obligatoria.");
+            return;
+        }
+
+        const montoRaw = window.prompt("Monto (solo número)", "0")?.trim() ?? "";
+        const monto = Number(montoRaw);
+
+        if (!Number.isFinite(monto) || monto <= 0) {
+            setActionError("El monto debe ser un número mayor que 0.");
+            return;
+        }
+
+        try {
+            await addTransaction({
+                fecha: new Date().toISOString(),
+                tipo,
+                categoria,
+                descripcion,
+                monto,
+            });
+        } catch (err) {
+            setActionError(getAuthErrorMessage(err));
+        }
+    };
+
     return (
         <div className="main-container relative flex w-full min-h-screen flex-col items-start bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
             <DashboardSidebar />
@@ -56,6 +229,7 @@ export const Registros = () => {
                         </div>
                         <button
                             type="button"
+                            onClick={handleAddRegistro}
                             className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#003d9b] px-6 py-3 text-white shadow-[0_8px_10px_0_rgba(0,61,155,0.25)] transition-all duration-200 hover:bg-[#0052cc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003d9b]"
                         >
                             <span className="[font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-6">
@@ -63,6 +237,13 @@ export const Registros = () => {
                             </span>
                         </button>
                     </div>
+
+                    {(error || actionError) && (
+                        <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">
+                            {actionError || error}
+                        </p>
+                    )}
+
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 self-stretch shrink-0 relative z-[73]">
                         <div className="flex flex-col gap-[8px] items-start bg-[#fff] rounded-[32px] p-6 border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[74]">
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[75]">
@@ -72,7 +253,7 @@ export const Registros = () => {
                             </div>
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[77]">
                                 <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#003d9b] relative text-left whitespace-nowrap z-[78]">
-                                    S/124,592.00
+                                    {formatCurrency(totals.balance)}
                                 </span>
                             </div>
                         </div>
@@ -84,7 +265,7 @@ export const Registros = () => {
                             </div>
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[82]">
                                 <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#006c49] relative text-left whitespace-nowrap z-[83]">
-                                    +S/12,400.00
+                                    {formatCurrency(totals.ingresos, true)}
                                 </span>
                             </div>
                         </div>
@@ -96,7 +277,7 @@ export const Registros = () => {
                             </div>
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[87]">
                                 <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#ba1a1a] relative text-left whitespace-nowrap z-[88]">
-                                    -S/8,240.00
+                                    {formatCurrency(-totals.gastos, true)}
                                 </span>
                             </div>
                         </div>
@@ -128,203 +309,59 @@ export const Registros = () => {
                             </div>
                         </div>
                         <div className="w-full overflow-x-auto">
-                        <div className="flex min-w-[960px] flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[102]">
-                            <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-start self-stretch shrink-0 border-solid border-t border-t-[rgba(195,198,214,0.1)] relative z-[103]">
-                                <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[104]">
-                                    <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[105]">
-                                        Fecha
-                                    </span>
+                            <div className="flex min-w-[960px] flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[102]">
+                                <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-start self-stretch shrink-0 border-solid border-t border-t-[rgba(195,198,214,0.1)] relative z-[103]">
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[104]">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[105]">
+                                            Fecha
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[106]">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[107]">
+                                            Tipo
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[108]">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[109]">
+                                            Categoría
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[110]">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[111]">
+                                            Descripción
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative z-[112]">
+                                        <span className="flex w-[45.47px] h-[16px] justify-end items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-right uppercase whitespace-nowrap z-[113]">
+                                            Monto
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[106]">
-                                    <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[107]">
-                                        Tipo
-                                    </span>
-                                </div>
-                                <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[108]">
-                                    <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[109]">
-                                        Categoría
-                                    </span>
-                                </div>
-                                <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[110]">
-                                    <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[111]">
-                                        Descripción
-                                    </span>
-                                </div>
-                                <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative z-[112]">
-                                    <span className="flex w-[45.47px] h-[16px] justify-end items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-right uppercase whitespace-nowrap z-[113]">
-                                        Monto
-                                    </span>
+                                <div className="flex flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[114]">
+                                    {loading ? (
+                                        <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative">
+                                            <div className="col-span-5 px-8 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                                Cargando transacciones...
+                                            </div>
+                                        </div>
+                                    ) : data.length === 0 ? (
+                                        <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative">
+                                            <div className="col-span-5 px-8 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                                Aún no tienes transacciones registradas.
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        data.map((transaction) => (
+                                            <TransactionRow key={transaction.id} transaction={transaction} />
+                                        ))
+                                    )}
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[114]">
-                                <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 relative z-[115]">
-                                    <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[116]">
-                                        <span className="flex w-[48.63px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden z-[117]">
-                                            24 Oct,
-                                            <br />
-                                            2023
-                                        </span>
-                                    </div>
-                                    <div className="flex w-full pt-[32.5px] pr-[32px] pb-[32.5px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[118]">
-                                        <div className="flex w-[82px] pt-[4px] pr-[12px] pb-[4px] pl-[12px] items-center shrink-0 flex-nowrap bg-[#6cf8bb] rounded-full relative z-[119]">
-                                            <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#00714d] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[120]">
-                                                INGRESO
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full pt-0 pr-0 pb-0 pl-[32px] gap-[11.99px] items-center shrink-0 flex-nowrap relative z-[121]">
-                                        <div className="flex w-[24.02px] h-[32px] justify-center items-center shrink-0 flex-nowrap bg-[rgba(0,108,73,0.1)] rounded-full relative z-[122]">
-                                            <div className="flex w-[12.833px] flex-col items-start shrink-0 flex-nowrap relative z-[123]">
-                                                <div className="w-[12.833px] h-[9.333px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/BxktpAcur9.png)] bg-cover bg-no-repeat relative z-[124]" />
-                                            </div>
-                                        </div>
-                                        <div className="flex w-[131.67px] pt-0 pr-[36.93px] pb-0 pl-0 flex-col items-start shrink-0 flex-nowrap relative z-[125]">
-                                            <span className="flex w-[94.74px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#131b2e] relative text-left overflow-hidden z-[126]">
-                                                Honorarios de
-                                                <br />
-                                                Consultoría
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full pt-[34px] pr-[32px] pb-[35px] pl-[63.99px] flex-col items-start shrink-0 flex-nowrap relative z-[127]">
-                                        <span className="h-[20px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left whitespace-nowrap z-[128]">
-                                            Servicios de Asesoría Q4
-                                        </span>
-                                    </div>
-                                    <div className="flex w-full pt-[30.5px] pr-[32px] pb-[30.5px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative z-[129]">
-                                        <span className="flex w-[101.05px] h-[28px] justify-end items-center shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold leading-[28px] text-[#006c49] relative text-right whitespace-nowrap z-[130]">
-                                            +S/4,500.00
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative z-[131]">
-                                    <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[132]">
-                                        <span className="flex w-[48.45px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden z-[133]">
-                                            23 Oct,
-                                            <br />
-                                            2023
-                                        </span>
-                                    </div>
-                                    <div className="flex w-full pt-[32.5px] pr-[32px] pb-[32.5px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[134]">
-                                        <div className="flex w-[69.05px] pt-[4px] pr-[12px] pb-[4px] pl-[12px] items-center shrink-0 flex-nowrap bg-[#ffdad6] rounded-full relative z-[135]">
-                                            <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#93000a] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[136]">
-                                                GASTO
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full pt-0 pr-0 pb-0 pl-[32px] gap-[12px] items-center shrink-0 flex-nowrap relative z-[137]">
-                                        <div className="flex w-[30.98px] h-[32px] justify-center items-center shrink-0 flex-nowrap bg-[rgba(186,26,26,0.1)] rounded-full relative z-[138]">
-                                            <div className="flex w-[9.333px] flex-col items-start shrink-0 flex-nowrap relative z-[139]">
-                                                <div className="w-[9.333px] h-[10.5px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/BEyZymh1HQ.png)] bg-cover bg-no-repeat relative z-[140]" />
-                                            </div>
-                                        </div>
-                                        <div className="flex w-[124.7px] pt-0 pr-[61.68px] pb-0 pl-0 flex-col items-start shrink-0 flex-nowrap relative z-[141]">
-                                            <span className="flex w-[63.02px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#131b2e] relative text-left overflow-hidden z-[142]">
-                                                Alquiler y<br />
-                                                Servicios
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[63.99px] flex-col items-start shrink-0 flex-nowrap relative z-[143]">
-                                        <span className="flex w-[133.96px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden z-[144]">
-                                            Espacio de Oficina -<br />
-                                            Sucursal Centro
-                                        </span>
-                                    </div>
-                                    <div className="flex w-full pt-[30.5px] pr-[32px] pb-[30.5px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative z-[145]">
-                                        <span className="flex w-[93.63px] h-[28px] justify-end items-center shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold leading-[28px] text-[#ba1a1a] relative text-right whitespace-nowrap z-[146]">
-                                            -S/2,100.00
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative z-[147]">
-                                    <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[148]">
-                                        <span className="flex w-[48.34px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden z-[149]">
-                                            22 Oct,
-                                            <br />
-                                            2023
-                                        </span>
-                                    </div>
-                                    <div className="flex w-full pt-[32.5px] pr-[32px] pb-[32.5px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[150]">
-                                        <div className="flex w-[69.05px] pt-[4px] pr-[12px] pb-[4px] pl-[12px] items-center shrink-0 flex-nowrap bg-[#ffdad6] rounded-full relative z-[151]">
-                                            <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#93000a] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[152]">
-                                                GASTO
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full pt-0 pr-0 pb-0 pl-[32px] gap-[12px] items-center shrink-0 flex-nowrap relative z-[153]">
-                                        <div className="flex w-[32px] h-[32px] justify-center items-center shrink-0 flex-nowrap bg-[rgba(186,26,26,0.1)] rounded-full relative z-[154]">
-                                            <div className="flex w-[11.656px] flex-col items-start shrink-0 flex-nowrap relative z-[155]">
-                                                <div className="w-[11.656px] h-[11.667px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/F9UFriyPyg.png)] bg-cover bg-no-repeat relative z-[156]" />
-                                            </div>
-                                        </div>
-                                        <div className="flex w-[118.56px] flex-col items-start shrink-0 flex-nowrap relative z-[157]">
-                                            <span className="h-[20px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#131b2e] relative text-left whitespace-nowrap z-[158]">
-                                                SaaS de Software
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[63.99px] flex-col items-start shrink-0 flex-nowrap relative z-[159]">
-                                        <span className="flex w-[157.96px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden z-[160]">
-                                            Infraestructura Mensual
-                                            <br />
-                                            en la Nube
-                                        </span>
-                                    </div>
-                                    <div className="flex w-full pt-[30.5px] pr-[32px] pb-[30.5px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative z-[161]">
-                                        <span className="flex w-[81.38px] h-[28px] justify-end items-center shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold leading-[28px] text-[#ba1a1a] relative text-right whitespace-nowrap z-[162]">
-                                            -S/450.00
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative z-[163]">
-                                    <div className="flex w-full pt-[24px] pr-[32px] pb-[24px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[164]">
-                                        <span className="flex w-[45.5px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden z-[165]">
-                                            21 Oct,
-                                            <br />
-                                            2023
-                                        </span>
-                                    </div>
-                                    <div className="flex w-full pt-[32.5px] pr-[32px] pb-[32px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[166]">
-                                        <div className="flex w-[82px] pt-[4px] pr-[12px] pb-[4px] pl-[12px] items-center shrink-0 flex-nowrap bg-[#6cf8bb] rounded-full relative z-[167]">
-                                            <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#00714d] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[168]">
-                                                INGRESO
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full pt-0 pr-0 pb-0 pl-[32px] gap-[11.99px] items-center shrink-0 flex-nowrap relative z-[169]">
-                                        <div className="flex w-[25.72px] h-[32px] justify-center items-center shrink-0 flex-nowrap bg-[rgba(0,108,73,0.1)] rounded-full relative z-[170]">
-                                            <div className="flex w-[11.667px] flex-col items-start shrink-0 flex-nowrap relative z-[171]">
-                                                <div className="w-[11.667px] h-[7px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/1yDWCi7mm9.png)] bg-cover bg-no-repeat relative z-[172]" />
-                                            </div>
-                                        </div>
-                                        <div className="flex w-[129.97px] pt-0 pr-[34.2px] pb-0 pl-0 flex-col items-start shrink-0 flex-nowrap relative z-[173]">
-                                            <span className="flex w-[95.77px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#131b2e] relative text-left overflow-hidden z-[174]">
-                                                Dividendos de
-                                                <br />
-                                                Acciones
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex w-full pt-[24px] pr-[32px] pb-[24px] pl-[63.99px] flex-col items-start shrink-0 flex-nowrap relative z-[175]">
-                                        <span className="flex w-[133.91px] h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden z-[176]">
-                                            Rendimiento Anual -<br />
-                                            Fondo Tech Global
-                                        </span>
-                                    </div>
-                                    <div className="flex w-full pt-[30.5px] pr-[32px] pb-[30px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative z-[177]">
-                                        <span className="flex w-[94.78px] h-[28px] justify-end items-center shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold leading-[28px] text-[#006c49] relative text-right whitespace-nowrap z-[178]">
-                                            +S/1,280.45
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         </div>
                         <div className="flex px-4 py-4 sm:px-8 sm:py-6 flex-col gap-3 sm:flex-row sm:justify-between sm:items-center self-stretch shrink-0 flex-nowrap bg-[rgba(242,243,255,0.2)] relative z-[179]">
                             <div className="flex w-full sm:w-[234.08px] flex-col items-start shrink-0 flex-nowrap relative z-[180]">
                                 <span className="h-[20px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#434654] relative text-left whitespace-nowrap z-[181]">
-                                    Mostrando 4 de 248 transacciones
+                                    Mostrando {data.length} transacciones
                                 </span>
                             </div>
                             <div className="flex w-full sm:w-[232px] gap-[8px] items-start justify-center sm:justify-start shrink-0 flex-nowrap relative z-[182]">
@@ -360,6 +397,4 @@ export const Registros = () => {
             </div>
         </div>
     );
-}
-
-
+};
