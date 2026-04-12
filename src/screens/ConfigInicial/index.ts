@@ -1,0 +1,1 @@
+export {ConfigInicial} from './ConfigInicial';
