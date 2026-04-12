@@ -3,6 +3,7 @@ import { useTransactions } from "../../hooks/useTransactions";
 import { useProfile } from "../../hooks/useProfile";
 import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { useMemo } from "react";
+import { ProfileMenu } from "../../components/ProfileMenu";
 
 export const Dashboard = () => {
     const { data, loading } = useTransactions();
@@ -154,7 +155,7 @@ export const Dashboard = () => {
                                 <div className="h-[20px] w-[16px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/4pmBka5dZ8.png)] bg-cover bg-no-repeat" />
                                 <div className="absolute right-[7px] top-[8px] h-2 w-2 rounded-full bg-[#ba1a1a]" />
                             </div>
-                            <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-[rgba(0,82,204,0.2)] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GtEyW4VDxX.png)] bg-cover bg-no-repeat" />
+                            <ProfileMenu avatarClassName="h-10 w-10" />
                         </div>
                     </header>
 

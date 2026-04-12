@@ -1,10 +1,6 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { NavLink } from "react-router-dom";
 
 export const DashboardSidebar = () => {
-    const navigate = useNavigate();
-    const { logout } = useAuth();
-
     const primaryItems = [
         { label: "Tablero", icon: "hX43M1ppbz.png", to: "/dashboard" },
         { label: "Registros", icon: "XBTeeWFNKO.png", to: "/registros" },
@@ -14,32 +10,25 @@ export const DashboardSidebar = () => {
     const navItemBaseClass =
         "shrink-0 flex items-center gap-3 rounded-full px-4 py-3 transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]";
 
-    const handleLogout = async () => {
-        try {
-            await logout();
-            navigate("/", { replace: true });
-        } catch (err) {
-            console.error("No se pudo cerrar sesion", err);
-        }
-    };
-
     return (
         <aside className="relative z-20 flex w-full flex-col gap-2 bg-[#f2f3ff] px-4 py-4 lg:absolute lg:left-0 lg:top-0 lg:min-h-screen lg:w-[288px] lg:px-6 lg:py-6">
-            <a
-                href="/dashboard"
-                aria-label="Ir al tablero de Solix"
-                className="flex items-center gap-3 pb-3 lg:pb-6 rounded-xl transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]"
-            >
-                <div className="h-10 w-10 overflow-hidden rounded-full bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/mee9vB8FWX.png)] bg-cover bg-no-repeat" />
-                <div className="flex flex-col">
-                    <span className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#003d9b]">
-                        Solix
-                    </span>
-                    <span className="[font-family:'Inter-Regular',Helvetica] text-[10px] font-medium uppercase tracking-[0.5px] text-[#64748b]">
-                        Libro mayor etereo
-                    </span>
-                </div>
-            </a>
+            <div className="flex items-start gap-3 pb-3 lg:pb-6">
+                <a
+                    href="/dashboard"
+                    aria-label="Ir al tablero de Solix"
+                    className="flex items-center gap-3 rounded-xl transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]"
+                >
+                    <div className="h-10 w-10 overflow-hidden rounded-full bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/mee9vB8FWX.png)] bg-cover bg-no-repeat" />
+                    <div className="flex flex-col">
+                        <span className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#003d9b]">
+                            Solix
+                        </span>
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[10px] font-medium uppercase tracking-[0.5px] text-[#64748b]">
+                            Libro mayor etereo
+                        </span>
+                    </div>
+                </a>
+            </div>
 
             <nav aria-label="Navegacion principal" className="flex flex-1 flex-row gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
                 {primaryItems.map(({ label, icon, to }) => (
@@ -75,23 +64,7 @@ export const DashboardSidebar = () => {
                 ))}
             </nav>
 
-            <div className="mt-auto pt-2 lg:w-full lg:pt-4">
-                <div className="hidden border-b border-b-[rgba(226,232,240,0.5)] pb-4 lg:block" />
-                <button
-                    type="button"
-                    aria-label="Cerrar sesion"
-                    onClick={handleLogout}
-                    className="shrink-0 w-full flex items-center gap-3 rounded-full px-4 py-3 text-[#434654] transition-all duration-200 hover:bg-white/80 hover:text-[#0052cc] hover:shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc] lg:mt-2"
-                >
-                    <div
-                        className="h-[18px] w-[18px] shrink-0 bg-cover bg-no-repeat"
-                        style={{ backgroundImage: "url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/M8JYveLffY.png)" }}
-                    />
-                    <span className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[21px]">
-                        Cerrar sesion
-                    </span>
-                </button>
-            </div>
+            <div className="mt-auto pt-2 lg:w-full lg:pt-4" />
         </aside>
     );
 };
