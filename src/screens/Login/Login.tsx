@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import { getAuthErrorMessage } from "../../services/auth.service";
 // import icon from "./icon.svg";
 // import icon2 from "./icon-2.svg";
 // import image from "./image.svg";
@@ -8,9 +11,25 @@ export const Login = () => {
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const navigate = useNavigate();
+    const { login } = useAuth();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        setError("");
+        setSubmitting(true);
+
+        try {
+            await login(email, password);
+            navigate("/dashboard");
+        } catch (err) {
+            setError(getAuthErrorMessage(err));
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -53,6 +72,11 @@ export const Login = () => {
                             </div>
                         </div>
                         <div className="flex flex-col items-start gap-6 pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto]">
+                            {error && (
+                                <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">
+                                    {error}
+                                </p>
+                            )}
                             <div className="relative self-stretch w-full h-[84px]">
                                 <label
                                     htmlFor="email"
@@ -167,11 +191,12 @@ export const Login = () => {
                             </div>
                             <button
                                 type="submit"
+                                disabled={submitting}
                                 className="all-[unset] box-border flex items-center justify-center px-0 py-4 relative self-stretch w-full flex-[0_0_auto] rounded-full bg-[linear-gradient(169deg,rgba(0,61,155,1)_0%,rgba(0,82,204,1)_100%)] cursor-pointer"
                             >
                                 <div className="absolute w-full h-full top-0 left-0 bg-[#ffffff01] rounded-full shadow-[0px_4px_6px_-4px_#003d9b33,0px_10px_15px_-3px_#003d9b33]" />
                                 <span className="flex items-center justify-center [font-family:'Manrope-Bold',Helvetica] font-bold text-white text-lg text-center tracking-[0] leading-7 whitespace-nowrap relative w-fit mt-[-1.00px]">
-                                    Iniciar Sesión
+                                    {submitting ? "Ingresando..." : "Iniciar Sesión"}
                                 </span>
                             </button>
                         </div>
@@ -218,12 +243,12 @@ export const Login = () => {
                             <span className="flex items-center justify-center [font-family:'Inter-Regular',Helvetica] font-normal text-[#434654] text-base text-center tracking-[0] leading-6 whitespace-nowrap relative w-fit mt-[-1.00px]">
                                 ¿No tienes una cuenta?
                             </span>
-                            <a
-                                href="#"
+                            <Link
+                                to="/registro-usuario"
                                 className="relative flex items-center justify-center w-fit mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-[#003d9b] text-base text-center tracking-[0] leading-6 whitespace-nowrap"
                             >
                                 Crear cuenta
-                            </a>
+                            </Link>
                         </div>
                     </form>
                 </div>

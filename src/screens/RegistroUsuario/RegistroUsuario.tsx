@@ -1,4 +1,44 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import { getAuthErrorMessage } from "../../services/auth.service";
+
 export const RegistroUsuario = () => {
+    const [fullName, setFullName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const navigate = useNavigate();
+    const { register } = useAuth();
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+
+        if (!fullName.trim()) {
+            setError("Ingresa tu nombre completo.");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError("Las contraseñas no coinciden.");
+            return;
+        }
+
+        setSubmitting(true);
+
+        try {
+            await register(email, password);
+            navigate("/dashboard");
+        } catch (err) {
+            setError(getAuthErrorMessage(err));
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     return (
         <div className="relative flex min-h-screen w-full flex-col bg-[#faf8ff]">
             <div className="relative flex min-h-screen w-full items-center justify-center px-4 py-12 sm:px-8 md:px-12 md:py-20">
@@ -17,7 +57,10 @@ export const RegistroUsuario = () => {
                         </div>
                     </div>
 
-                    <div className="relative w-full rounded-[32px] border border-solid border-[#c3c6d633] bg-[#ffffffcc] p-8 backdrop-blur-md backdrop-brightness-[100%] sm:p-10 [-webkit-backdrop-filter:blur(12px)_brightness(100%)]">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="relative w-full rounded-[32px] border border-solid border-[#c3c6d633] bg-[#ffffffcc] p-8 backdrop-blur-md backdrop-brightness-[100%] sm:p-10 [-webkit-backdrop-filter:blur(12px)_brightness(100%)]"
+                    >
                         <div className="pointer-events-none absolute inset-0 rounded-[32px] bg-[#ffffff01] shadow-[0px_8px_10px_-6px_#131b2e0d,0px_20px_25px_-5px_#131b2e0d]" />
 
                         <div className="relative flex flex-col gap-8">
@@ -33,49 +76,71 @@ export const RegistroUsuario = () => {
                             </div>
 
                             <div className="flex flex-col gap-5">
+                                {error && (
+                                    <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">
+                                        {error}
+                                    </p>
+                                )}
                                 <div>
                                     <label className="mb-2 ml-1 block [font-family:'Inter-SemiBold',Helvetica] text-sm font-semibold leading-5 text-[#131b2e]">
                                         Nombre Completo
                                     </label>
-                                    <div className="rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685]">
-                                        John Doe
-                                    </div>
+                                    <input
+                                        type="text"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        placeholder="John Doe"
+                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685] outline-none"
+                                    />
                                 </div>
 
                                 <div>
                                     <label className="mb-2 ml-1 block [font-family:'Inter-SemiBold',Helvetica] text-sm font-semibold leading-5 text-[#131b2e]">
                                         Correo Electrónico
                                     </label>
-                                    <div className="rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685]">
-                                        email@ejemplo.com
-                                    </div>
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="email@ejemplo.com"
+                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685] outline-none"
+                                    />
                                 </div>
 
                                 <div>
                                     <label className="mb-2 ml-1 block [font-family:'Inter-SemiBold',Helvetica] text-sm font-semibold leading-5 text-[#131b2e]">
                                         Contraseña
                                     </label>
-                                    <div className="rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685]">
-                                        ••••••••
-                                    </div>
+                                    <input
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685] outline-none"
+                                    />
                                 </div>
 
                                 <div>
                                     <label className="mb-2 ml-1 block [font-family:'Inter-SemiBold',Helvetica] text-sm font-semibold leading-5 text-[#131b2e]">
                                         Confirmar Contraseña
                                     </label>
-                                    <div className="rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685]">
-                                        ••••••••
-                                    </div>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685] outline-none"
+                                    />
                                 </div>
                             </div>
 
                             <button
-                                type="button"
+                                type="submit"
+                                disabled={submitting}
                                 className="relative flex w-full items-center justify-center rounded-full bg-[linear-gradient(169deg,rgba(0,61,155,1)_0%,rgba(0,82,204,1)_100%)] px-0 py-4"
                             >
                                 <span className="[font-family:'Manrope-Bold',Helvetica] text-lg font-bold leading-7 text-white">
-                                    Registrarse
+                                    {submitting ? "Creando cuenta..." : "Registrarse"}
                                 </span>
                             </button>
 
@@ -111,12 +176,15 @@ export const RegistroUsuario = () => {
                                 <span className="[font-family:'Inter-Regular',Helvetica] text-base font-normal leading-6 text-[#434654]">
                                     ¿Ya tienes una cuenta?
                                 </span>
-                                <span className="[font-family:'Inter-Bold',Helvetica] text-base font-bold leading-6 text-[#003d9b]">
+                                <Link
+                                    to="/"
+                                    className="[font-family:'Inter-Bold',Helvetica] text-base font-bold leading-6 text-[#003d9b]"
+                                >
                                     Iniciar Sesión
-                                </span>
+                                </Link>
                             </div>
                         </div>
-                    </div>
+                    </form>
 
                     <div className="w-full text-center [font-family:'Inter-Regular',Helvetica] text-xs font-normal leading-4 text-[#73768599]">
                         © 2024 Solix Finance. Secure & Ethereal.
