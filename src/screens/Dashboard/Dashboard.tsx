@@ -1,10 +1,12 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
 import { useTransactions } from "../../hooks/useTransactions";
 import { useProfile } from "../../hooks/useProfile";
+import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { useMemo } from "react";
 
 export const Dashboard = () => {
     const { data, loading } = useTransactions();
+    const { data: scheduledData, loading: scheduledLoading } = useScheduledTransactions();
     const { profile } = useProfile();
 
     const formatCurrency = (amount: number, withSign = false) => {
@@ -26,8 +28,13 @@ export const Dashboard = () => {
         totalGastos,
         ingresosInstantaneosCount,
         gastosInstantaneosCount,
+        gastosProgramadosPendientes,
+        gastosProgramadosPagados,
+        gastosProgramadosPendientesCount,
+        gastosProgramadosPagadosCount,
         balanceOperativo,
         capitalDisponible,
+        capitalProyectado,
         categoriasGasto,
         totalGastoChart,
         chartGradient,
@@ -45,13 +52,31 @@ export const Dashboard = () => {
         const ingresosCount = data.filter((item) => item.tipo === "ingreso").length;
         const gastosCount = data.filter((item) => item.tipo === "gasto").length;
 
-        const groupedByCategory = data
-            .filter((item) => item.tipo === "gasto")
-            .reduce<Record<string, number>>((acc, item) => {
-                const key = item.categoria?.trim() || "Sin categoría";
-                acc[key] = (acc[key] ?? 0) + Number(item.monto || 0);
-                return acc;
-            }, {});
+        const scheduledPending = scheduledData
+            .filter((item) => item.estado === "pendiente")
+            .reduce((sum, item) => sum + Number(item.monto || 0), 0);
+
+        const scheduledPaid = scheduledData
+            .filter((item) => item.estado === "pagado")
+            .reduce((sum, item) => sum + Number(item.monto || 0), 0);
+
+        const scheduledPendingCount = scheduledData.filter((item) => item.estado === "pendiente").length;
+        const scheduledPaidCount = scheduledData.filter((item) => item.estado === "pagado").length;
+
+        const groupedByCategory = [
+            ...data.filter((item) => item.tipo === "gasto").map((item) => ({
+                categoria: item.categoria,
+                monto: Number(item.monto || 0),
+            })),
+            ...scheduledData.map((item) => ({
+                categoria: item.categoria,
+                monto: Number(item.monto || 0),
+            })),
+        ].reduce<Record<string, number>>((acc, item) => {
+            const key = item.categoria?.trim() || "Sin categoría";
+            acc[key] = (acc[key] ?? 0) + Number(item.monto || 0);
+            return acc;
+        }, {});
 
         const palette = ["#003d9b", "#006c49", "#ba1a1a", "#984100", "#7a5af8", "#0ea5e9"];
 
@@ -59,12 +84,9 @@ export const Dashboard = () => {
             .map(([categoria, monto]) => ({ categoria, monto }))
             .sort((a, b) => b.monto - a.monto);
 
-        const top = ordered.slice(0, 4);
-        const rest = ordered.slice(4).reduce((sum, current) => sum + current.monto, 0);
-        const merged = rest > 0 ? [...top, { categoria: "Otros", monto: rest }] : top;
-        const chartTotal = merged.reduce((sum, current) => sum + current.monto, 0);
+        const chartTotal = ordered.reduce((sum, current) => sum + current.monto, 0);
 
-        const categoriesWithMeta = merged.map((item, index) => {
+        const categoriesWithMeta = ordered.map((item, index) => {
             const percentage = chartTotal > 0 ? (item.monto / chartTotal) * 100 : 0;
             return {
                 ...item,
@@ -94,13 +116,18 @@ export const Dashboard = () => {
             totalGastos: totalGastosValue,
             ingresosInstantaneosCount: ingresosCount,
             gastosInstantaneosCount: gastosCount,
+            gastosProgramadosPendientes: scheduledPending,
+            gastosProgramadosPagados: scheduledPaid,
+            gastosProgramadosPendientesCount: scheduledPendingCount,
+            gastosProgramadosPagadosCount: scheduledPaidCount,
             balanceOperativo: operativo,
             capitalDisponible: montoInicialValue + operativo,
+            capitalProyectado: montoInicialValue + operativo - scheduledPending,
             categoriasGasto: categoriesWithMeta,
             totalGastoChart: chartTotal,
             chartGradient: gradient,
         };
-    }, [data, profile?.monto_inicial]);
+    }, [data, scheduledData, profile?.monto_inicial]);
 
     return (
         <div className="main-container relative flex w-full min-h-screen pt-0 pr-0 pb-0 pl-0 flex-col items-start flex-nowrap bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
@@ -132,7 +159,7 @@ export const Dashboard = () => {
                     </header>
 
                     <section className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                        {loading && (
+                        {(loading || scheduledLoading) && (
                             <div className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#434654]">
                                 Cargando...
                             </div>
@@ -155,7 +182,7 @@ export const Dashboard = () => {
                         </div>
 
                         <div className="rounded-[20px] border border-[rgba(0,61,155,0.15)] bg-[rgba(0,61,155,0.04)] px-4 py-3 text-[13px] leading-5 text-[#1d4ed8]">
-                            Mostrando ingresos y gastos instantáneos. Los movimientos programados aparecerán cuando se implemente ese módulo.
+                            Mostrando ingresos, gastos instantáneos y pagos programados en un mismo resumen.
                         </div>
 
                         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
@@ -216,6 +243,40 @@ export const Dashboard = () => {
                                         </div>
                                     </div>
 
+                                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6 border-t border-[#eaedff] pt-5">
+                                        <div>
+                                            <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
+                                                Por pagar programado
+                                            </div>
+                                            <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
+                                                Pagos pendientes futuros
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#ba1a1a] break-words">
+                                                {formatCurrency(-gastosProgramadosPendientes, true)}
+                                            </div>
+                                            <div className="text-[11px] text-[#64748b]">{gastosProgramadosPendientesCount} programado(s)</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6 border-t border-[#eaedff] pt-5">
+                                        <div>
+                                            <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
+                                                Programado pagado
+                                            </div>
+                                            <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
+                                                Pagos programados ya completados
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#006c49] break-words">
+                                                {formatCurrency(-gastosProgramadosPagados, true)}
+                                            </div>
+                                            <div className="text-[11px] text-[#64748b]">{gastosProgramadosPagadosCount} programado(s)</div>
+                                        </div>
+                                    </div>
+
                                     <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6 rounded-[32px] bg-[rgba(0,61,155,0.05)] px-5 py-5 sm:px-6 sm:py-6 border border-[rgba(255,255,255,0.5)]">
                                         <div>
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-bold uppercase tracking-[1.2px] text-[#003d9b]">
@@ -227,6 +288,20 @@ export const Dashboard = () => {
                                         </div>
                                         <div className="[font-family:'Manrope-Bold',Helvetica] text-[30px] sm:text-[30px] font-bold leading-9 text-[#003d9b] break-words">
                                             {formatCurrency(capitalDisponible)}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6 rounded-[32px] bg-[rgba(186,26,26,0.06)] px-5 py-5 sm:px-6 sm:py-6 border border-[rgba(255,255,255,0.5)]">
+                                        <div>
+                                            <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-bold uppercase tracking-[1.2px] text-[#ba1a1a]">
+                                                Capital proyectado
+                                            </div>
+                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(185,28,28,0.7)]">
+                                                Capital disponible - por pagar programado
+                                            </p>
+                                        </div>
+                                        <div className="[font-family:'Manrope-Bold',Helvetica] text-[30px] sm:text-[30px] font-bold leading-9 text-[#ba1a1a] break-words">
+                                            {formatCurrency(capitalProyectado)}
                                         </div>
                                     </div>
                                 </div>
