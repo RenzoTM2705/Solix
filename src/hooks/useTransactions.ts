@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
-import { createTransaction, getTransactions, updateTransaction as updateTransactionService } from "../services/transactions.service";
+import {
+    createTransaction,
+    deleteTransaction as deleteTransactionService,
+    getTransactions,
+    updateTransaction as updateTransactionService,
+} from "../services/transactions.service";
 import type { CreateTransactionInput, Transaction, UpdateTransactionInput } from "../types/transaction";
 import { getAuthErrorMessage } from "../services/auth.service";
 
@@ -60,6 +65,18 @@ export const useTransactions = () => {
         [user?.id],
     );
 
+    const deleteTransaction = useCallback(
+        async (id: string) => {
+            if (!user?.id) {
+                throw new Error("Debes iniciar sesión para eliminar transacciones.");
+            }
+
+            await deleteTransactionService(id, user.id);
+            setData((prev) => prev.filter((item) => item.id !== id));
+        },
+        [user?.id],
+    );
+
     useEffect(() => {
         refreshTransactions();
     }, [refreshTransactions]);
@@ -70,6 +87,7 @@ export const useTransactions = () => {
         error,
         addTransaction,
         editTransaction,
+        deleteTransaction,
         refreshTransactions,
     };
 };

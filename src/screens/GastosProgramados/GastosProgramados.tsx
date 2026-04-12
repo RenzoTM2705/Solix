@@ -1,5 +1,5 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const upcomingPayments = [
     {
@@ -49,7 +49,181 @@ const upcomingPayments = [
     },
 ];
 
+type UpcomingPayment = (typeof upcomingPayments)[number];
+
+type ScheduledExpenseForm = {
+    fecha: string;
+    frecuencia: string;
+    categoria: string;
+    descripcion: string;
+    monto: string;
+    estado: string;
+};
+
+const ScheduledExpenseModal = ({
+    open,
+    form,
+    onClose,
+    onChange,
+}: {
+    open: boolean;
+    form: ScheduledExpenseForm;
+    onClose: () => void;
+    onChange: (field: keyof ScheduledExpenseForm, value: string) => void;
+}) => {
+    if (!open) {
+        return null;
+    }
+
+    return (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-[rgba(19,27,46,0.45)] px-4">
+            <div className="w-full max-w-[520px] rounded-[32px] border border-[rgba(195,198,214,0.2)] bg-white p-6 shadow-[0_30px_60px_0_rgba(19,27,46,0.18)] sm:p-8">
+                <div className="mb-5 flex items-center justify-between">
+                    <h3 className="[font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-[32px] text-[#131b2e]">
+                        Editar Gasto Programado
+                    </h3>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-full px-3 py-1 [font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold text-[#434654] hover:bg-[#f2f3ff]"
+                    >
+                        Cerrar
+                    </button>
+                </div>
+
+                <p className="mb-4 [font-family:'Inter-Regular',Helvetica] text-[13px] text-[#434654]">
+                    Esta modal es visual por ahora. La persistencia se habilitará cuando se implemente el módulo.
+                </p>
+
+                <div className="grid grid-cols-1 gap-4">
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Fecha
+                        </span>
+                        <input
+                            type="text"
+                            value={form.fecha}
+                            onChange={(e) => onChange("fecha", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Frecuencia
+                        </span>
+                        <input
+                            type="text"
+                            value={form.frecuencia}
+                            onChange={(e) => onChange("frecuencia", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Categoría
+                        </span>
+                        <input
+                            type="text"
+                            value={form.categoria}
+                            onChange={(e) => onChange("categoria", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Descripción
+                        </span>
+                        <input
+                            type="text"
+                            value={form.descripcion}
+                            onChange={(e) => onChange("descripcion", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Monto
+                        </span>
+                        <input
+                            type="text"
+                            value={form.monto}
+                            onChange={(e) => onChange("monto", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Estado
+                        </span>
+                        <input
+                            type="text"
+                            value={form.estado}
+                            onChange={(e) => onChange("estado", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+                </div>
+
+                <div className="mt-6 flex items-center justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-full border border-[rgba(195,198,214,0.5)] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#434654]"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        disabled
+                        className="rounded-full bg-[#003d9b] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-white opacity-60"
+                    >
+                        Guardar (próximamente)
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const GastosProgramados = () => {
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [scheduledForm, setScheduledForm] = useState<ScheduledExpenseForm>({
+        fecha: "",
+        frecuencia: "",
+        categoria: "",
+        descripcion: "",
+        monto: "",
+        estado: "",
+    });
+
+    const handleOpenEditModal = (item: UpcomingPayment) => {
+        setScheduledForm({
+            fecha: item.fecha,
+            frecuencia: item.frecuencia,
+            categoria: item.categoria,
+            descripcion: item.descripcion,
+            monto: item.monto,
+            estado: item.estado,
+        });
+        setEditModalOpen(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setEditModalOpen(false);
+    };
+
+    const handleScheduledChange = (field: keyof ScheduledExpenseForm, value: string) => {
+        setScheduledForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
     useEffect(() => {
         const pageTitle = "Gastos Programados | Solix";
         const pageDescription =
@@ -256,6 +430,9 @@ export const GastosProgramados = () => {
                                         <th scope="col" className="px-6 py-4 text-right [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
                                             Estado
                                         </th>
+                                        <th scope="col" className="px-6 py-4 text-right [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -284,6 +461,15 @@ export const GastosProgramados = () => {
                                                 <span className={`inline-flex rounded-full px-4 py-1 [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] ${item.estadoColor}`}>
                                                     {item.estado}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleOpenEditModal(item)}
+                                                    className="inline-flex items-center justify-center rounded-full border border-[#c3c6d64d] px-4 py-2 [font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold leading-4 text-[#0052cc] transition-all duration-200 hover:bg-[#f2f3ff]"
+                                                >
+                                                    Editar
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -326,6 +512,13 @@ export const GastosProgramados = () => {
                     </div>
                 </section>
             </main>
+
+            <ScheduledExpenseModal
+                open={editModalOpen}
+                form={scheduledForm}
+                onClose={handleCloseEditModal}
+                onChange={handleScheduledChange}
+            />
         </div>
     );
 };

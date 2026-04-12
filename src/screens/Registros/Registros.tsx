@@ -87,6 +87,7 @@ const TransactionModal = ({
     onClose,
     onChange,
     onSubmit,
+    onDelete,
 }: {
     open: boolean;
     mode: TransactionModalMode;
@@ -96,6 +97,7 @@ const TransactionModal = ({
     onClose: () => void;
     onChange: (field: keyof TransactionFormState, value: string) => void;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    onDelete?: () => void;
 }) => {
     if (!open) {
         return null;
@@ -178,7 +180,19 @@ const TransactionModal = ({
                     </label>
                 </div>
 
-                <div className="mt-6 flex items-center justify-end gap-3">
+                <div className="mt-6 flex items-center justify-between gap-3">
+                    <div>
+                        {mode === "edit" && onDelete && (
+                            <button
+                                type="button"
+                                onClick={onDelete}
+                                disabled={submitting}
+                                className="rounded-full border border-[rgba(186,26,26,0.35)] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#ba1a1a] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {submitting ? "Eliminando..." : "Eliminar"}
+                            </button>
+                        )}
+                    </div>
                     <button
                         type="button"
                         onClick={onClose}
@@ -265,7 +279,7 @@ const TransactionRow = ({
 };
 
 export const Registros = () => {
-    const { data, loading, error, addTransaction, editTransaction } = useTransactions();
+    const { data, loading, error, addTransaction, editTransaction, deleteTransaction } = useTransactions();
     const [actionError, setActionError] = useState("");
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<TransactionModalMode>("add");
@@ -377,6 +391,31 @@ export const Registros = () => {
                 });
             }
 
+            setModalOpen(false);
+            setActiveTransaction(null);
+            setForm(INITIAL_TRANSACTION_FORM);
+        } catch (err) {
+            setActionError(getAuthErrorMessage(err));
+        } finally {
+            setSubmittingForm(false);
+        }
+    };
+
+    const handleDeleteRegistro = async () => {
+        if (!activeTransaction || modalMode !== "edit") {
+            return;
+        }
+
+        const confirmed = window.confirm("¿Seguro que deseas eliminar este registro?");
+        if (!confirmed) {
+            return;
+        }
+
+        setActionError("");
+        setSubmittingForm(true);
+
+        try {
+            await deleteTransaction(activeTransaction.id);
             setModalOpen(false);
             setActiveTransaction(null);
             setForm(INITIAL_TRANSACTION_FORM);
@@ -628,6 +667,7 @@ export const Registros = () => {
                 onClose={handleCloseModal}
                 onChange={handleFormChange}
                 onSubmit={handleSubmitModal}
+                onDelete={handleDeleteRegistro}
             />
         </div>
     );
