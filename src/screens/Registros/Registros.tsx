@@ -79,6 +79,12 @@ const INITIAL_TRANSACTION_FORM: TransactionFormState = {
     monto: "",
 };
 
+const notifyAction = (message: string) => {
+    const payload = { message, timestamp: Date.now() };
+    sessionStorage.setItem("solix:last_action", JSON.stringify(payload));
+    window.dispatchEvent(new CustomEvent("solix:action", { detail: payload }));
+};
+
 const TransactionModal = ({
     open,
     mode,
@@ -402,6 +408,7 @@ export const Registros = () => {
                     descripcion,
                     monto,
                 });
+                notifyAction("Registro agregado correctamente.");
             } else if (activeTransaction) {
                 await editTransaction(activeTransaction.id, {
                     tipo,
@@ -409,6 +416,7 @@ export const Registros = () => {
                     descripcion,
                     monto,
                 });
+                notifyAction("Registro actualizado correctamente.");
             }
 
             setModalOpen(false);
@@ -437,6 +445,7 @@ export const Registros = () => {
 
         try {
             await deleteTransaction(activeTransaction.id);
+            notifyAction("Registro eliminado correctamente.");
             setModalOpen(false);
             setActiveTransaction(null);
             setForm(INITIAL_TRANSACTION_FORM);

@@ -72,6 +72,12 @@ const INITIAL_FORM: ScheduledExpenseForm = {
     estado: "pendiente",
 };
 
+const notifyAction = (message: string) => {
+    const payload = { message, timestamp: Date.now() };
+    sessionStorage.setItem("solix:last_action", JSON.stringify(payload));
+    window.dispatchEvent(new CustomEvent("solix:action", { detail: payload }));
+};
+
 const ScheduledExpenseModal = ({
     open,
     form,
@@ -344,6 +350,11 @@ export const GastosProgramados = () => {
                     fecha_programada: new Date(form.fecha_programada).toISOString(),
                     estado: form.estado,
                 });
+                notifyAction(
+                    form.estado === "pagado"
+                        ? "Pago programado marcado como completado."
+                        : "Gasto programado actualizado correctamente.",
+                );
             } else if (modalMode === "add") {
                 await addScheduledTransaction({
                     descripcion,
@@ -351,6 +362,7 @@ export const GastosProgramados = () => {
                     categoria,
                     fecha_programada: new Date(form.fecha_programada).toISOString(),
                 });
+                notifyAction("Gasto programado agregado correctamente.");
             }
 
             setModalOpen(false);
@@ -379,6 +391,7 @@ export const GastosProgramados = () => {
 
         try {
             await removeScheduledTransaction(activeItem.id);
+            notifyAction("Gasto programado eliminado correctamente.");
             setModalOpen(false);
             setActiveItem(null);
             setForm(INITIAL_FORM);
