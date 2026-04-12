@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ProfileMenu } from "../../components/ProfileMenu";
 import { useAuth } from "../../hooks/useAuth";
 import { getAuthErrorMessage } from "../../services/auth.service";
 
@@ -55,6 +56,7 @@ export const RegistroUsuario = () => {
                                 Solix
                             </span>
                         </div>
+                        <ProfileMenu avatarClassName="h-10 w-10" />
                     </div>
 
                     <form

@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ProfileMenu } from "../../components/ProfileMenu";
 import { useAuth } from "../../hooks/useAuth";
 import { useProfile } from "../../hooks/useProfile";
 import { createProfile, updateProfile } from "../../services/profile.service";
@@ -93,6 +94,7 @@ export const ConfigInicial = () => {
                         </span>
                     </div>
                 </div>
+                <ProfileMenu avatarClassName="h-10 w-10" />
                 <div className="hidden md:flex gap-[23.99px] items-center shrink-0 flex-nowrap relative z-[51]">
                     <div className="flex flex-col items-start shrink-0 flex-nowrap relative z-[52]">
                         <span className="h-[24px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] font-bold text-[16px] leading-[24px] text-[#434654] tracking-[-0.4px] relative text-left whitespace-nowrap z-[53]">
