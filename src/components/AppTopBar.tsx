@@ -292,7 +292,11 @@ export const AppTopBar = () => {
     return (
         <header className="flex flex-col gap-3 bg-[rgba(250,248,255,0.8)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-                <div className="h-8 w-8 overflow-hidden rounded-full bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GAUjAjEyGT.png)] bg-cover bg-no-repeat" />
+                <img
+                    src="/Solix-logo.ico"
+                    alt="Solix Logo"
+                    className="h-8 w-8 object-contain"
+                />
                 <span className="[font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-8 text-[#003d9b]">
                     Solix
                 </span>
