@@ -6,6 +6,8 @@ import {
     signIn as signInService,
     signOut as signOutService,
     signUp as signUpService,
+    checkInactivityTimeout,
+    updateLastActivityTime,
 } from "../services/auth.service";
 
 export const useAuth = () => {
@@ -25,9 +27,33 @@ export const useAuth = () => {
 
         const initializeAuth = async () => {
             try {
+                // Verificar si sesión expiró por inactividad
+                const hasExpired = await checkInactivityTimeout();
+                
+                if (hasExpired) {
+                    if (mounted) {
+                        setUser(null);
+                    }
+                    return;
+                }
+
+                // Verificar si no marcó "Recordar sesión" y ya pasó tiempo
+                const rememberMe = localStorage.getItem('solix.rememberMe');
+                if (rememberMe === 'false' && sessionStorage.getItem('supabase.temp.token') === null) {
+                    // Sesión temporal expiró (pestaña cerrada)
+                    await signOutService();
+                    if (mounted) {
+                        setUser(null);
+                    }
+                    return;
+                }
+
                 const currentUser = await getCurrentUser();
                 if (mounted) {
                     setUser(currentUser);
+                    if (currentUser) {
+                        updateLastActivityTime();
+                    }
                 }
             } catch {
                 if (mounted) {
@@ -55,8 +81,8 @@ export const useAuth = () => {
         };
     }, []);
 
-    const login = useCallback(async (email: string, password: string) => {
-        const data = await signInService(email, password);
+    const login = useCallback(async (email: string, password: string, rememberMe: boolean = true) => {
+        const data = await signInService(email, password, rememberMe);
         setUser(data.user ?? null);
         return data;
     }, []);

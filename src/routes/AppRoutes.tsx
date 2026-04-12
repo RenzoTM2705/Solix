@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
+import { useInactivityTimeout } from "../hooks/useInactivityTimeout";
 import { ConfigInicial } from "../screens/ConfigInicial";
 import { Dashboard } from "../screens/Dashboard";
 import { GastosProgramados } from "../screens/GastosProgramados";
@@ -11,6 +12,7 @@ import { Registros } from "../screens/Registros";
 const RequireConfiguredAuth = ({ children }: { children: React.ReactElement }) => {
     const { user, loading: authLoading } = useAuth();
     const { profile, loading: profileLoading } = useProfile();
+    useInactivityTimeout();
 
     if (authLoading || profileLoading) {
         return <div className="min-h-screen w-full bg-[#faf8ff]" />;
@@ -30,6 +32,7 @@ const RequireConfiguredAuth = ({ children }: { children: React.ReactElement }) =
 const RequireAuthForSetup = ({ children }: { children: React.ReactElement }) => {
     const { user, loading: authLoading } = useAuth();
     const { profile, loading: profileLoading } = useProfile();
+    useInactivityTimeout();
 
     if (authLoading || profileLoading) {
         return <div className="min-h-screen w-full bg-[#faf8ff]" />;

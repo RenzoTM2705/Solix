@@ -23,7 +23,7 @@ export const Login = () => {
         setSubmitting(true);
 
         try {
-            await login(email, password);
+            await login(email, password, rememberMe);
             navigate("/dashboard");
         } catch (err) {
             setError(getAuthErrorMessage(err));

@@ -22,6 +22,18 @@ export const getSupabaseClient = (): SupabaseClient => {
                 flowType: "pkce", // Recomendado para SPA
             },
         });
+
+        // Restaurar sesión temporal del sessionStorage si existe
+        const tempToken = sessionStorage.getItem('supabase.temp.token');
+        if (tempToken && !localStorage.getItem('supabase.auth.token')) {
+            try {
+                const session = JSON.parse(tempToken);
+                supabaseInstance.auth.setSession(session);
+            } catch (error) {
+                console.warn('No se pudo restaurar sesión temporal:', error);
+                sessionStorage.removeItem('supabase.temp.token');
+            }
+        }
     }
 
     return supabaseInstance;

@@ -46,7 +46,7 @@ export const signUp = async (email: string, password: string) => {
     return data;
 };
 
-export const signIn = async (email: string, password: string) => {
+export const signIn = async (email: string, password: string, rememberMe: boolean = true) => {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -55,6 +55,24 @@ export const signIn = async (email: string, password: string) => {
 
     if (error) {
         throw error;
+    }
+
+    // Guardar timestamp de actividad
+    updateLastActivityTime();
+
+    // Gestionar persistencia según rememberMe
+    if (data.session) {
+        if (rememberMe) {
+            // Mantener en localStorage (persistente)
+            localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+            localStorage.setItem('solix.rememberMe', 'true');
+            sessionStorage.removeItem('supabase.temp.token');
+        } else {
+            // Guardar solo en sessionStorage (temporal)
+            sessionStorage.setItem('supabase.temp.token', JSON.stringify(data.session));
+            localStorage.removeItem('supabase.auth.token');
+            localStorage.setItem('solix.rememberMe', 'false');
+        }
     }
 
     return data;
@@ -67,6 +85,13 @@ export const signOut = async () => {
     if (error) {
         throw error;
     }
+
+    // Limpiar tanto localStorage como sessionStorage
+    localStorage.removeItem('supabase.auth.token');
+    sessionStorage.removeItem('supabase.temp.token');
+    localStorage.removeItem('solix.rememberMe');
+    localStorage.removeItem('solix.lastActivity');
+    sessionStorage.removeItem('solix.lastActivity');
 };
 
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -78,4 +103,36 @@ export const getCurrentUser = async (): Promise<User | null> => {
     }
 
     return data.user;
+};
+
+// Guardar timestamp de última actividad
+export const updateLastActivityTime = () => {
+    const timestamp = Date.now();
+    sessionStorage.setItem('solix.lastActivity', timestamp.toString());
+    localStorage.setItem('solix.lastActivity', timestamp.toString());
+};
+
+// Verificar si la sesión expiró por inactividad (15 minutos después de cerrar pestaña sin recordar sesión)
+const INACTIVITY_THRESHOLD = 15 * 60 * 1000; // 15 minutos
+
+export const checkInactivityTimeout = async (): Promise<boolean> => {
+    const lastActivity = Math.max(
+        parseInt(sessionStorage.getItem('solix.lastActivity') || '0'),
+        parseInt(localStorage.getItem('solix.lastActivity') || '0')
+    );
+
+    if (lastActivity === 0) {
+        return false; // No hay registro de actividad
+    }
+
+    const now = Date.now();
+    const timeSinceLastActivity = now - lastActivity;
+
+    if (timeSinceLastActivity > INACTIVITY_THRESHOLD) {
+        // Sesión expiró por inactividad, hacer logout
+        await signOut();
+        return true;
+    }
+
+    return false;
 };
