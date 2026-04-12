@@ -1,5 +1,5 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
-import { ProfileMenu } from "../../components/ProfileMenu";
+import { AppTopBar } from "../../components/AppTopBar";
 import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { ScheduledTransaction } from "../../types/scheduledTransaction";
@@ -471,32 +471,7 @@ export const GastosProgramados = () => {
                 aria-labelledby="gastos-programados-title"
             >
                 <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
-                <header className="flex flex-col gap-3 bg-[rgba(250,248,255,0.8)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/kMiBtgf6O5.png)] bg-cover bg-no-repeat" />
-                        <span className="[font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-8 text-[#003d9b]">
-                            Solix
-                        </span>
-                    </div>
-
-                    <div className="flex w-full items-center gap-3 sm:w-auto">
-                        <div className="relative w-full sm:w-[280px]">
-                            <input
-                                type="text"
-                                aria-label="Buscar elementos programados"
-                                placeholder="Buscar elementos programados..."
-                                className="w-full rounded-full bg-[#f2f3ff] py-[10px] pl-10 pr-4 text-[14px] text-[#6b7280] outline-none"
-                            />
-                            <div className="pointer-events-none absolute left-3 top-1/2 h-[16px] w-[16px] -translate-y-1/2 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/qt6imbxQcA.png)] bg-cover bg-no-repeat" />
-                        </div>
-                        <div className="flex w-[32px] pt-[8px] pr-[8px] pb-[8px] pl-[8px] flex-col justify-center items-center shrink-0 flex-nowrap rounded-full relative z-[61]">
-                            <div className="flex w-[16px] justify-center items-start shrink-0 flex-nowrap relative z-[62]">
-                                <div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AfdAwGr5cL.png)] bg-cover bg-no-repeat relative z-[63]" />
-                            </div>
-                        </div>
-                        <ProfileMenu avatarClassName="h-8 w-8" />
-                    </div>
-                </header>
+                <AppTopBar />
 
                 <section className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

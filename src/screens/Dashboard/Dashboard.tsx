@@ -1,9 +1,9 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
+import { AppTopBar } from "../../components/AppTopBar";
 import { useTransactions } from "../../hooks/useTransactions";
 import { useProfile } from "../../hooks/useProfile";
 import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { useMemo } from "react";
-import { ProfileMenu } from "../../components/ProfileMenu";
 
 export const Dashboard = () => {
     const { data, loading } = useTransactions();
@@ -161,28 +161,7 @@ export const Dashboard = () => {
                 <DashboardSidebar />
 
                 <main className="relative z-10 min-h-screen w-full lg:ml-[288px] lg:w-[calc(100%-288px)]">
-                    <header className="flex flex-col gap-3 bg-[rgba(250,248,255,0.8)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 backdrop-blur-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 overflow-hidden rounded-full bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GAUjAjEyGT.png)] bg-cover bg-no-repeat" />
-                            <span className="[font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-8 text-[#003d9b]">
-                                Solix
-                            </span>
-                        </div>
-
-                        <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start sm:gap-4">
-                            <div className="relative w-full sm:w-[256px] overflow-hidden rounded-full bg-[#f2f3ff] pl-10 pr-4 py-[10px]">
-                                <div className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/X3jXi0uKsm.png)] bg-cover bg-no-repeat" />
-                                <span className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[17px] tracking-[-0.35px] text-[#6b7280]">
-                                    Buscar...
-                                </span>
-                            </div>
-                            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white">
-                                <div className="h-[20px] w-[16px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/4pmBka5dZ8.png)] bg-cover bg-no-repeat" />
-                                <div className="absolute right-[7px] top-[8px] h-2 w-2 rounded-full bg-[#ba1a1a]" />
-                            </div>
-                            <ProfileMenu avatarClassName="h-10 w-10" />
-                        </div>
-                    </header>
+                    <AppTopBar />
 
                     <section className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                         {(loading || scheduledLoading) && (
