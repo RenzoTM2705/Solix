@@ -1,8 +1,18 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import { useProfile } from "../../hooks/useProfile";
+import { createProfile, updateProfile } from "../../services/profile.service";
+import { getAuthErrorMessage } from "../../services/auth.service";
 
 export const ConfigInicial = () => {
     const [montoInicial, setMontoInicial] = useState("");
+    const [error, setError] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const { profile } = useProfile();
 
     const handleMontoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value.replace(",", ".");
@@ -27,6 +37,47 @@ export const ConfigInicial = () => {
 
         const numericValue = Number(montoInicial);
         setMontoInicial(Number.isNaN(numericValue) ? "0.00" : numericValue.toFixed(2));
+    };
+
+    const handleComenzar = async () => {
+        if (isSaving) {
+            return;
+        }
+
+        setError("");
+
+        if (!montoInicial.trim()) {
+            setError("Ingresa un monto inicial válido.");
+            return;
+        }
+
+        const monto = Number(montoInicial);
+
+        if (!Number.isFinite(monto) || monto <= 0) {
+            setError("Ingresa un monto inicial válido.");
+            return;
+        }
+
+        if (!user?.id) {
+            setError("Tu sesión no es válida. Inicia sesión nuevamente.");
+            return;
+        }
+
+        setIsSaving(true);
+
+        try {
+            if (profile && !profile.is_configured) {
+                await updateProfile(user.id, monto);
+            } else {
+                await createProfile(user.id, monto);
+            }
+
+            navigate("/dashboard", { replace: true });
+        } catch (err) {
+            setError(getAuthErrorMessage(err));
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -132,16 +183,26 @@ export const ConfigInicial = () => {
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex pt-[20px] pr-[32px] pb-[20px] pl-[32px] gap-[12px] justify-center items-center self-stretch shrink-0 flex-nowrap rounded-full relative z-[34] bg-[linear-gradient(169deg,rgba(0,61,155,1)_0%,rgba(0,82,204,1)_100%)] cursor-pointer">
+                            {error && (
+                                <span className="self-stretch text-center [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#dc2626] relative z-[34]">
+                                    {error}
+                                </span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleComenzar}
+                                disabled={isSaving}
+                                className="flex pt-[20px] pr-[32px] pb-[20px] pl-[32px] gap-[12px] justify-center items-center self-stretch shrink-0 flex-nowrap rounded-full relative z-[34] bg-[linear-gradient(169deg,rgba(0,61,155,1)_0%,rgba(0,82,204,1)_100%)] cursor-pointer"
+                            >
                                 <div className="flex w-[99.73px] flex-col items-center shrink-0 flex-nowrap relative z-[35]">
                                     <span className="flex w-[99.73px] h-[28px] justify-center items-center shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-[28px] text-[#fff] relative text-center whitespace-nowrap z-[36]">
-                                        Comenzar
+                                        {isSaving ? "Guardando..." : "Comenzar"}
                                     </span>
                                 </div>
                                 <div className="flex w-[16px] flex-col items-center shrink-0 flex-nowrap relative z-[37]">
                                     <div className="w-[16px] h-[16px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/djbCppa0G8.png)] bg-cover bg-no-repeat relative z-[38]" />
                                 </div>
-                            </div>
+                            </button>
                         </div>
                     </div>
                     <div className="flex gap-[7.99px] justify-center items-center self-stretch shrink-0 flex-nowrap relative z-[39] px-2">

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useProfile } from "../hooks/useProfile";
 import { ConfigInicial } from "../screens/ConfigInicial";
 import { Dashboard } from "../screens/Dashboard";
 import { GastosProgramados } from "../screens/GastosProgramados";
@@ -7,10 +8,11 @@ import { Login } from "../screens/Login";
 import { RegistroUsuario } from "../screens/RegistroUsuario";
 import { Registros } from "../screens/Registros";
 
-const RequireAuth = ({ children }: { children: React.ReactElement }) => {
-    const { user, loading } = useAuth();
+const RequireConfiguredAuth = ({ children }: { children: React.ReactElement }) => {
+    const { user, loading: authLoading } = useAuth();
+    const { profile, loading: profileLoading } = useProfile();
 
-    if (loading) {
+    if (authLoading || profileLoading) {
         return <div className="min-h-screen w-full bg-[#faf8ff]" />;
     }
 
@@ -18,17 +20,45 @@ const RequireAuth = ({ children }: { children: React.ReactElement }) => {
         return <Navigate to="/" replace />;
     }
 
+    if (!profile || !profile.is_configured) {
+        return <Navigate to="/config-inicial" replace />;
+    }
+
+    return children;
+};
+
+const RequireAuthForSetup = ({ children }: { children: React.ReactElement }) => {
+    const { user, loading: authLoading } = useAuth();
+    const { profile, loading: profileLoading } = useProfile();
+
+    if (authLoading || profileLoading) {
+        return <div className="min-h-screen w-full bg-[#faf8ff]" />;
+    }
+
+    if (!user) {
+        return <Navigate to="/" replace />;
+    }
+
+    if (profile?.is_configured) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
     return children;
 };
 
 const RedirectIfAuth = ({ children }: { children: React.ReactElement }) => {
-    const { user, loading } = useAuth();
+    const { user, loading: authLoading } = useAuth();
+    const { profile, loading: profileLoading } = useProfile();
 
-    if (loading) {
+    if (authLoading || profileLoading) {
         return <div className="min-h-screen w-full bg-[#faf8ff]" />;
     }
 
     if (user) {
+        if (!profile || !profile.is_configured) {
+            return <Navigate to="/config-inicial" replace />;
+        }
+
         return <Navigate to="/dashboard" replace />;
     }
 
@@ -56,33 +86,33 @@ export const AppRoutes = () => (
         <Route
             path="/config-inicial"
             element={(
-                <RequireAuth>
+                <RequireAuthForSetup>
                     <ConfigInicial />
-                </RequireAuth>
+                </RequireAuthForSetup>
             )}
         />
         <Route
             path="/dashboard"
             element={(
-                <RequireAuth>
+                <RequireConfiguredAuth>
                     <Dashboard />
-                </RequireAuth>
+                </RequireConfiguredAuth>
             )}
         />
         <Route
             path="/registros"
             element={(
-                <RequireAuth>
+                <RequireConfiguredAuth>
                     <Registros />
-                </RequireAuth>
+                </RequireConfiguredAuth>
             )}
         />
         <Route
             path="/gastos-programados"
             element={(
-                <RequireAuth>
+                <RequireConfiguredAuth>
                     <GastosProgramados />
-                </RequireAuth>
+                </RequireConfiguredAuth>
             )}
         />
     </Routes>
