@@ -7,12 +7,14 @@ import { ConfigInicial } from './screens/ConfigInicial';
 import { Dashboard } from './screens/Dashboard';
 import { Registros } from './screens/Registros';
 import { GastosProgramados } from './screens/GastosProgramados';
+import { RegistroUsuario } from './screens/RegistroUsuario';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/registro-usuario" element={<RegistroUsuario />} />
         <Route path="/config-inicial" element={<ConfigInicial />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/registros" element={<Registros />} />
