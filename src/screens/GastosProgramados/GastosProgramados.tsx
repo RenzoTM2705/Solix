@@ -1,75 +1,87 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
-import { useEffect, useState } from "react";
+import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
+import { getAuthErrorMessage } from "../../services/auth.service";
+import type { ScheduledTransaction } from "../../types/scheduledTransaction";
+import { useEffect, useMemo, useState } from "react";
 
-const upcomingPayments = [
-    {
-        fecha: "15 Oct, 2023",
-        frecuencia: "Mensual",
-        categoria: "Vivienda",
-        descripcion: "Pago de Renta - Apartamento 4B",
-        monto: "S/1,200.00",
-        estado: "Pendiente",
-        estadoColor: "text-[#93000a] bg-[#ffdad6]",
-    },
-    {
-        fecha: "12 Oct, 2023",
-        frecuencia: "Mensual",
-        categoria: "Servicios",
-        descripcion: "Factura de Electricidad",
-        monto: "S/85.50",
-        estado: "Pagado",
-        estadoColor: "text-[#00714d] bg-[#6cf8bb]",
-    },
-    {
-        fecha: "18 Oct, 2023",
-        frecuencia: "Anual",
-        categoria: "Seguros",
-        descripcion: "Seguro de Gastos Medicos",
-        monto: "S/2,400.00",
-        estado: "Pendiente",
-        estadoColor: "text-[#93000a] bg-[#ffdad6]",
-    },
-    {
-        fecha: "10 Oct, 2023",
-        frecuencia: "Mensual",
-        categoria: "Entretenimiento",
-        descripcion: "Suscripcion Streaming Premium",
-        monto: "S/15.99",
-        estado: "Pagado",
-        estadoColor: "text-[#00714d] bg-[#6cf8bb]",
-    },
-    {
-        fecha: "22 Oct, 2023",
-        frecuencia: "Unica vez",
-        categoria: "Transporte",
-        descripcion: "Mantenimiento Preventivo Auto",
-        monto: "S/350.00",
-        estado: "Pendiente",
-        estadoColor: "text-[#93000a] bg-[#ffdad6]",
-    },
-];
+const formatCurrency = (value: number, withSign = false) => {
+    const abs = Math.abs(value).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
 
-type UpcomingPayment = (typeof upcomingPayments)[number];
+    if (!withSign) {
+        return `S/ ${abs}`;
+    }
+
+    const prefix = value >= 0 ? "+" : "-";
+    return `${prefix}S/ ${abs}`;
+};
+
+const formatDate = (value: string) => {
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return value;
+    }
+
+    return parsed.toLocaleDateString("es-PE", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    });
+};
+
+const getStateStyles = (estado: string) => {
+    if (estado === "pagado") {
+        return {
+            label: "Pagado",
+            badge: "text-[#00714d] bg-[#6cf8bb]",
+            amount: "text-[#006c49]",
+        };
+    }
+
+    return {
+        label: "Pendiente",
+        badge: "text-[#93000a] bg-[#ffdad6]",
+        amount: "text-[#ba1a1a]",
+    };
+};
 
 type ScheduledExpenseForm = {
-    fecha: string;
-    frecuencia: string;
-    categoria: string;
     descripcion: string;
     monto: string;
-    estado: string;
+    categoria: string;
+    fecha_programada: string;
+    estado: "pendiente" | "pagado";
+};
+
+const INITIAL_FORM: ScheduledExpenseForm = {
+    descripcion: "",
+    monto: "",
+    categoria: "",
+    fecha_programada: new Date().toISOString().slice(0, 10),
+    estado: "pendiente",
 };
 
 const ScheduledExpenseModal = ({
     open,
     form,
+    error,
+    submitting,
     onClose,
     onChange,
+    onSubmit,
+    onDelete,
 }: {
     open: boolean;
     form: ScheduledExpenseForm;
+    error: string;
+    submitting: boolean;
     onClose: () => void;
     onChange: (field: keyof ScheduledExpenseForm, value: string) => void;
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    onDelete: () => void;
 }) => {
     if (!open) {
         return null;
@@ -77,7 +89,10 @@ const ScheduledExpenseModal = ({
 
     return (
         <div className="fixed inset-0 z-[250] flex items-center justify-center bg-[rgba(19,27,46,0.45)] px-4">
-            <div className="w-full max-w-[520px] rounded-[32px] border border-[rgba(195,198,214,0.2)] bg-white p-6 shadow-[0_30px_60px_0_rgba(19,27,46,0.18)] sm:p-8">
+            <form
+                onSubmit={onSubmit}
+                className="w-full max-w-[520px] rounded-[32px] border border-[rgba(195,198,214,0.2)] bg-white p-6 shadow-[0_30px_60px_0_rgba(19,27,46,0.18)] sm:p-8"
+            >
                 <div className="mb-5 flex items-center justify-between">
                     <h3 className="[font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-[32px] text-[#131b2e]">
                         Editar Gasto Programado
@@ -91,31 +106,31 @@ const ScheduledExpenseModal = ({
                     </button>
                 </div>
 
-                <p className="mb-4 [font-family:'Inter-Regular',Helvetica] text-[13px] text-[#434654]">
-                    Esta modal es visual por ahora. La persistencia se habilitará cuando se implemente el módulo.
-                </p>
+                {error && <p className="mb-4 [font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">{error}</p>}
 
                 <div className="grid grid-cols-1 gap-4">
                     <label className="flex flex-col gap-2">
                         <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
-                            Fecha
+                            Descripción
                         </span>
                         <input
                             type="text"
-                            value={form.fecha}
-                            onChange={(e) => onChange("fecha", e.target.value)}
+                            value={form.descripcion}
+                            onChange={(e) => onChange("descripcion", e.target.value)}
                             className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
                         />
                     </label>
 
                     <label className="flex flex-col gap-2">
                         <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
-                            Frecuencia
+                            Monto
                         </span>
                         <input
-                            type="text"
-                            value={form.frecuencia}
-                            onChange={(e) => onChange("frecuencia", e.target.value)}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={form.monto}
+                            onChange={(e) => onChange("monto", e.target.value)}
                             className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
                         />
                     </label>
@@ -134,24 +149,12 @@ const ScheduledExpenseModal = ({
 
                     <label className="flex flex-col gap-2">
                         <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
-                            Descripción
+                            Fecha programada
                         </span>
                         <input
-                            type="text"
-                            value={form.descripcion}
-                            onChange={(e) => onChange("descripcion", e.target.value)}
-                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
-                        />
-                    </label>
-
-                    <label className="flex flex-col gap-2">
-                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
-                            Monto
-                        </span>
-                        <input
-                            type="text"
-                            value={form.monto}
-                            onChange={(e) => onChange("monto", e.target.value)}
+                            type="date"
+                            value={form.fecha_programada}
+                            onChange={(e) => onChange("fecha_programada", e.target.value)}
                             className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
                         />
                     </label>
@@ -160,16 +163,25 @@ const ScheduledExpenseModal = ({
                         <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
                             Estado
                         </span>
-                        <input
-                            type="text"
+                        <select
                             value={form.estado}
                             onChange={(e) => onChange("estado", e.target.value)}
                             className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
-                        />
+                        >
+                            <option value="pendiente">Pendiente</option>
+                            <option value="pagado">Pagado</option>
+                        </select>
                     </label>
                 </div>
 
                 <div className="mt-6 flex items-center justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={onDelete}
+                        className="mr-auto rounded-full border border-[rgba(186,26,26,0.25)] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#ba1a1a] hover:bg-[#fff0ef]"
+                    >
+                        Eliminar
+                    </button>
                     <button
                         type="button"
                         onClick={onClose}
@@ -178,50 +190,210 @@ const ScheduledExpenseModal = ({
                         Cancelar
                     </button>
                     <button
-                        type="button"
-                        disabled
-                        className="rounded-full bg-[#003d9b] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-white opacity-60"
+                        type="submit"
+                        disabled={submitting}
+                        className="rounded-full bg-[#003d9b] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-white disabled:opacity-60"
                     >
-                        Guardar (próximamente)
+                        {submitting ? "Guardando..." : "Guardar"}
                     </button>
                 </div>
-            </div>
+            </form>
         </div>
     );
 };
 
 export const GastosProgramados = () => {
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [scheduledForm, setScheduledForm] = useState<ScheduledExpenseForm>({
-        fecha: "",
-        frecuencia: "",
-        categoria: "",
-        descripcion: "",
-        monto: "",
-        estado: "",
-    });
+    const {
+        data,
+        loading,
+        error,
+        addScheduledTransaction,
+        updateScheduledTransaction,
+        removeScheduledTransaction,
+    } = useScheduledTransactions();
+    const [actionError, setActionError] = useState("");
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+    const [activeItem, setActiveItem] = useState<ScheduledTransaction | null>(null);
+    const [form, setForm] = useState<ScheduledExpenseForm>(INITIAL_FORM);
+    const [submittingForm, setSubmittingForm] = useState(false);
 
-    const handleOpenEditModal = (item: UpcomingPayment) => {
-        setScheduledForm({
-            fecha: item.fecha,
-            frecuencia: item.frecuencia,
-            categoria: item.categoria,
+    const totals = useMemo(() => {
+        const now = new Date();
+        const limit = new Date(now);
+        limit.setDate(limit.getDate() + 30);
+
+        const pendingItems = data.filter((item) => item.estado === "pendiente");
+        const paidItems = data.filter((item) => item.estado === "pagado");
+        const upcomingItems = pendingItems.filter((item) => {
+            const parsed = new Date(item.fecha_programada);
+            return !Number.isNaN(parsed.getTime()) && parsed >= now && parsed <= limit;
+        });
+
+        return {
+            upcomingTotal: upcomingItems.reduce((sum, item) => sum + Number(item.monto || 0), 0),
+            upcomingCount: upcomingItems.length,
+            activeTotal: pendingItems.reduce((sum, item) => sum + Number(item.monto || 0), 0),
+            activeCount: pendingItems.length,
+            inactiveTotal: paidItems.reduce((sum, item) => sum + Number(item.monto || 0), 0),
+            inactiveCount: paidItems.length,
+        };
+    }, [data]);
+
+    const handleAddScheduledTransaction = async () => {
+        setActionError("");
+
+        const descripcion = window.prompt("Descripción del gasto programado:");
+        if (descripcion === null) {
+            return;
+        }
+
+        const monto = window.prompt("Monto del gasto programado:");
+        if (monto === null) {
+            return;
+        }
+
+        const categoria = window.prompt("Categoría del gasto programado:");
+        if (categoria === null) {
+            return;
+        }
+
+        const fechaProgramada = window.prompt("Fecha programada (YYYY-MM-DD):");
+        if (fechaProgramada === null) {
+            return;
+        }
+
+        const normalizedDescripcion = descripcion.trim();
+        const normalizedCategoria = categoria.trim();
+        const normalizedMonto = Number(monto);
+        const normalizedFechaProgramada = fechaProgramada.trim();
+
+        if (!normalizedDescripcion || !normalizedCategoria || !normalizedFechaProgramada) {
+            setActionError("Nombre y categoría son obligatorios.");
+            return;
+        }
+
+        if (!Number.isFinite(normalizedMonto) || normalizedMonto <= 0) {
+            setActionError("El monto debe ser un número mayor que 0.");
+            return;
+        }
+
+        setSubmittingForm(true);
+
+        try {
+            await addScheduledTransaction({
+                descripcion: normalizedDescripcion,
+                monto: normalizedMonto,
+                categoria: normalizedCategoria,
+                fecha_programada: new Date(normalizedFechaProgramada).toISOString(),
+            });
+        } catch (err) {
+            setActionError(getAuthErrorMessage(err));
+        } finally {
+            setSubmittingForm(false);
+        }
+    };
+
+    const handleOpenEditModal = (item: ScheduledTransaction) => {
+        setActionError("");
+        setModalMode("edit");
+        setActiveItem(item);
+        setForm({
             descripcion: item.descripcion,
-            monto: item.monto,
+            monto: String(item.monto),
+            categoria: item.categoria,
+            fecha_programada: item.fecha_programada.slice(0, 10),
             estado: item.estado,
         });
-        setEditModalOpen(true);
+        setModalOpen(true);
     };
 
-    const handleCloseEditModal = () => {
-        setEditModalOpen(false);
-    };
-
-    const handleScheduledChange = (field: keyof ScheduledExpenseForm, value: string) => {
-        setScheduledForm((prev) => ({
+    const handleFormChange = (field: keyof ScheduledExpenseForm, value: string) => {
+        setForm((prev) => ({
             ...prev,
             [field]: value,
         }));
+    };
+
+    const handleCloseModal = () => {
+        if (submittingForm) {
+            return;
+        }
+
+        setModalOpen(false);
+        setActiveItem(null);
+        setForm(INITIAL_FORM);
+    };
+
+    const handleSubmitModal = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setActionError("");
+
+        const descripcion = form.descripcion.trim();
+        const categoria = form.categoria.trim();
+        const monto = Number(form.monto);
+
+        if (!descripcion || !categoria) {
+            setActionError("Nombre y categoría son obligatorios.");
+            return;
+        }
+
+        if (!Number.isFinite(monto) || monto <= 0) {
+            setActionError("El monto debe ser un número mayor que 0.");
+            return;
+        }
+
+        if (!form.fecha_programada) {
+            setActionError("La fecha de próxima ejecución es obligatoria.");
+            return;
+        }
+
+        setSubmittingForm(true);
+
+        try {
+            if (modalMode === "edit" && activeItem) {
+                await updateScheduledTransaction(activeItem.id, {
+                    descripcion,
+                    monto,
+                    categoria,
+                    fecha_programada: new Date(form.fecha_programada).toISOString(),
+                    estado: form.estado,
+                });
+            }
+
+            setModalOpen(false);
+            setActiveItem(null);
+            setForm(INITIAL_FORM);
+        } catch (err) {
+            setActionError(getAuthErrorMessage(err));
+        } finally {
+            setSubmittingForm(false);
+        }
+    };
+
+    const handleDeleteFromModal = async () => {
+        if (!activeItem) {
+            return;
+        }
+
+        const confirmed = window.confirm(`¿Eliminar el gasto programado "${activeItem.descripcion}"?`);
+        if (!confirmed) {
+            return;
+        }
+
+        setActionError("");
+        setSubmittingForm(true);
+
+        try {
+            await removeScheduledTransaction(activeItem.id);
+            setModalOpen(false);
+            setActiveItem(null);
+            setForm(INITIAL_FORM);
+        } catch (err) {
+            setActionError(getAuthErrorMessage(err));
+        } finally {
+            setSubmittingForm(false);
+        }
     };
 
     useEffect(() => {
@@ -300,7 +472,10 @@ export const GastosProgramados = () => {
         <div className="relative flex w-full min-h-screen flex-col bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
             <DashboardSidebar />
 
-            <main className="relative z-10 min-h-screen w-full lg:ml-[288px] lg:w-[calc(100%-288px)]" aria-labelledby="gastos-programados-title">
+            <main
+                className="relative z-10 min-h-screen w-full lg:ml-[288px] lg:w-[calc(100%-288px)]"
+                aria-labelledby="gastos-programados-title"
+            >
                 <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
                 <header className="flex flex-col gap-3 bg-[rgba(250,248,255,0.8)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3">
@@ -320,7 +495,11 @@ export const GastosProgramados = () => {
                             />
                             <div className="pointer-events-none absolute left-3 top-1/2 h-[16px] w-[16px] -translate-y-1/2 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/qt6imbxQcA.png)] bg-cover bg-no-repeat" />
                         </div>
-                        <div className="flex w-[32px] pt-[8px] pr-[8px] pb-[8px] pl-[8px] flex-col justify-center items-center shrink-0 flex-nowrap rounded-full relative z-[61]"><div className="flex w-[16px] justify-center items-start shrink-0 flex-nowrap relative z-[62]"><div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AfdAwGr5cL.png)] bg-cover bg-no-repeat relative z-[63]"></div></div></div>
+                        <div className="flex w-[32px] pt-[8px] pr-[8px] pb-[8px] pl-[8px] flex-col justify-center items-center shrink-0 flex-nowrap rounded-full relative z-[61]">
+                            <div className="flex w-[16px] justify-center items-start shrink-0 flex-nowrap relative z-[62]">
+                                <div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AfdAwGr5cL.png)] bg-cover bg-no-repeat relative z-[63]" />
+                            </div>
+                        </div>
                         <div className="flex w-[32px] h-[32px] flex-col items-start shrink-0 flex-nowrap bg-[rgba(255,255,255,0)] rounded-full border-2 border-[rgba(0,82,204,0.2)] relative overflow-hidden shadow-[0_0_0_0_#dae2ff] z-[64]">
                             <div className="w-[32px] h-[32px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GtEyW4VDxX.png)] bg-cover bg-no-repeat relative overflow-hidden z-[65]" />
                         </div>
@@ -330,55 +509,69 @@ export const GastosProgramados = () => {
                 <section className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div className="min-w-0">
-                            <h1 id="gastos-programados-title" className="[font-family:'Manrope-Bold',Helvetica] text-[28px] font-bold leading-[34px] text-[#131b2e] sm:text-[34px] sm:leading-[40px]">
+                            <h1
+                                id="gastos-programados-title"
+                                className="[font-family:'Manrope-Bold',Helvetica] text-[28px] font-bold leading-[34px] text-[#131b2e] sm:text-[34px] sm:leading-[40px]"
+                            >
                                 Gastos Programados
                             </h1>
                             <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[16px] leading-6 text-[#434654]">
-                                Administre sus pagos recurrentes y proximos compromisos financieros.
+                                Administre sus gastos programados desde un flujo conectado a Supabase.
                             </p>
                         </div>
 
-                        <button className="inline-flex items-center justify-center gap-2 rounded-full bg-[#003d9b] px-6 py-3 text-white shadow-[0_8px_10px_0_rgba(0,61,155,0.25)]">
+                        <button
+                            type="button"
+                            onClick={handleAddScheduledTransaction}
+                            disabled={submittingForm}
+                            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#003d9b] px-6 py-3 text-white shadow-[0_8px_10px_0_rgba(0,61,155,0.25)] disabled:opacity-60"
+                        >
                             <span className="[font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-6">
-                                Programar Gasto
+                                Agregar gasto programado
                             </span>
                         </button>
                     </div>
 
+                    {(error || actionError) && (
+                        <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">
+                            {actionError || error}
+                        </p>
+                    )}
+
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <article className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                             <p className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-bold uppercase tracking-[1.2px] text-[#006c49]">
-                                Proximos 30 dias
+                                Próximos 30 días
                             </p>
                             <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#131b2e]">
-                                S/4,250.00
+                                {formatCurrency(totals.upcomingTotal)}
                             </p>
                             <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
-                                12 pagos pendientes
+                                {totals.upcomingCount} pagos activos
                             </p>
                         </article>
 
                         <article className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                             <p className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-bold uppercase tracking-[1.2px] text-[#003d9b]">
-                                Pagado este mes
+                                Activos
                             </p>
                             <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#131b2e]">
-                                S/1,890.00
+                                {formatCurrency(totals.activeTotal)}
                             </p>
                             <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
-                                5 pagos procesados
+                                {totals.activeCount} registros activos
                             </p>
                         </article>
 
                         <article className="rounded-[32px] border-l-4 border-[#ba1a1a] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                             <p className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-bold uppercase tracking-[1.2px] text-[#ba1a1a]">
-                                Vencidos
+                                Inactivos
                             </p>
                             <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#131b2e]">
-                                S/120.00
+                                {formatCurrency(totals.inactiveTotal)}
                             </p>
                             <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
-                                2 acciones requeridas
+                                {totals.inactiveCount} registros inactivos
                             </p>
                         </article>
                     </div>
@@ -386,7 +579,7 @@ export const GastosProgramados = () => {
                     <div className="overflow-hidden rounded-[32px] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                         <div className="flex flex-col gap-3 bg-[rgba(242,243,255,0.5)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                             <h2 className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
-                                Actividad Reciente
+                                Lista de Gastos Programados
                             </h2>
                             <div className="flex w-[149.693px] gap-[16px] items-start shrink-0 flex-nowrap relative z-[93]">
                                 <div className="flex w-[58.23px] gap-[8px] items-center shrink-0 flex-nowrap relative z-[94]">
@@ -409,7 +602,7 @@ export const GastosProgramados = () => {
                         </div>
 
                         <div className="w-full overflow-x-auto">
-                            <table className="min-w-[920px] w-full">
+                            <table className="min-w-[1100px] w-full">
                                 <caption className="sr-only">
                                     Lista de gastos programados con fecha, categoria, descripcion, monto y estado
                                 </caption>
@@ -430,56 +623,68 @@ export const GastosProgramados = () => {
                                         <th scope="col" className="px-6 py-4 text-right [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
                                             Estado
                                         </th>
-                                        <th scope="col" className="px-6 py-4 text-right [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
-                                            Acciones
-                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {upcomingPayments.map((item) => (
-                                        <tr key={`${item.fecha}-${item.descripcion}`} className="border-b border-[rgba(195,198,214,0.1)]">
-                                            <td className="px-6 py-4">
-                                                <p className="[font-family:'Inter-Regular',Helvetica] text-[16px] font-semibold text-[#131b2e]">
-                                                    {item.fecha}
-                                                </p>
-                                                <p className="[font-family:'Inter-Regular',Helvetica] text-[12px] text-[#434654]">
-                                                    {item.frecuencia}
-                                                </p>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex rounded-full bg-[#e2e7ff] px-3 py-1 [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium text-[#131b2e]">
-                                                    {item.categoria}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 [font-family:'Inter-Regular',Helvetica] text-[15px] font-medium text-[#131b2e]">
-                                                {item.descripcion}
-                                            </td>
-                                            <td className="px-6 py-4 [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold text-[#131b2e]">
-                                                {item.monto}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className={`inline-flex rounded-full px-4 py-1 [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] ${item.estadoColor}`}>
-                                                    {item.estado}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleOpenEditModal(item)}
-                                                    className="inline-flex items-center justify-center rounded-full border border-[#c3c6d64d] px-4 py-2 [font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold leading-4 text-[#0052cc] transition-all duration-200 hover:bg-[#f2f3ff]"
-                                                >
-                                                    Editar
-                                                </button>
+                                    {loading ? (
+                                        <tr className="border-b border-[rgba(195,198,214,0.1)]">
+                                            <td colSpan={5} className="px-6 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                                Cargando...
                                             </td>
                                         </tr>
-                                    ))}
+                                    ) : data.length === 0 ? (
+                                        <tr className="border-b border-[rgba(195,198,214,0.1)]">
+                                            <td colSpan={5} className="px-6 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                                Aún no tienes gastos programados registrados.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        data.map((item) => {
+                                            const stateStyles = getStateStyles(item.estado);
+
+                                            return (
+                                                <tr key={item.id} className="border-b border-[rgba(195,198,214,0.1)]">
+                                                    <td className="px-6 py-4">
+                                                        <p className="[font-family:'Inter-Regular',Helvetica] text-[16px] font-semibold text-[#131b2e]">
+                                                            {formatDate(item.fecha_programada)}
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="inline-flex rounded-full bg-[#e2e7ff] px-3 py-1 [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium text-[#131b2e]">
+                                                            {item.categoria}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 [font-family:'Inter-Regular',Helvetica] text-[15px] font-medium text-[#131b2e]">
+                                                        {item.descripcion}
+                                                    </td>
+                                                    <td className={`px-6 py-4 [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold ${stateStyles.amount}`}>
+                                                        {formatCurrency(item.monto)}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="flex flex-col items-end gap-2">
+                                                            <span className={`inline-flex rounded-full px-4 py-1 [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] ${stateStyles.badge}`}>
+                                                                {stateStyles.label}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenEditModal(item)}
+                                                                className="inline-flex items-center justify-center rounded-full border border-[#c3c6d64d] px-4 py-2 [font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold leading-4 text-[#0052cc] transition-all duration-200 hover:bg-[#f2f3ff]"
+                                                            >
+                                                                Editar
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
                                 </tbody>
                             </table>
                         </div>
 
                         <div className="flex flex-col gap-3 bg-[#f2f3ff] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                             <p className="[font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
-                                Mostrando 5 de 18 gastos programados
+                                Mostrando {data.length} gastos programados
                             </p>
                             <div className="flex w-full sm:w-[232px] gap-[8px] items-start justify-center sm:justify-start shrink-0 flex-nowrap relative z-[182]">
                                 <div className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[183]">
@@ -514,10 +719,14 @@ export const GastosProgramados = () => {
             </main>
 
             <ScheduledExpenseModal
-                open={editModalOpen}
-                form={scheduledForm}
-                onClose={handleCloseEditModal}
-                onChange={handleScheduledChange}
+                open={modalOpen}
+                form={form}
+                error={actionError}
+                submitting={submittingForm}
+                onClose={handleCloseModal}
+                onChange={handleFormChange}
+                onSubmit={handleSubmitModal}
+                onDelete={handleDeleteFromModal}
             />
         </div>
     );
