@@ -1,6 +1,107 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
+import { useTransactions } from "../../hooks/useTransactions";
+import { useProfile } from "../../hooks/useProfile";
+import { useMemo } from "react";
 
 export const Dashboard = () => {
+    const { data, loading } = useTransactions();
+    const { profile } = useProfile();
+
+    const formatCurrency = (amount: number, withSign = false) => {
+        const value = Math.abs(amount).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        if (!withSign) {
+            return `S/ ${value}`;
+        }
+
+        return `${amount >= 0 ? "+" : "-"}S/ ${value}`;
+    };
+
+    const {
+        montoInicial,
+        totalIngresos,
+        totalGastos,
+        ingresosInstantaneosCount,
+        gastosInstantaneosCount,
+        balanceOperativo,
+        capitalDisponible,
+        categoriasGasto,
+        totalGastoChart,
+        chartGradient,
+    } = useMemo(() => {
+        const montoInicialValue = Number(profile?.monto_inicial ?? 0);
+
+        const totalIngresosValue = data
+            .filter((item) => item.tipo === "ingreso")
+            .reduce((sum, item) => sum + Number(item.monto || 0), 0);
+
+        const totalGastosValue = data
+            .filter((item) => item.tipo === "gasto")
+            .reduce((sum, item) => sum + Number(item.monto || 0), 0);
+
+        const ingresosCount = data.filter((item) => item.tipo === "ingreso").length;
+        const gastosCount = data.filter((item) => item.tipo === "gasto").length;
+
+        const groupedByCategory = data
+            .filter((item) => item.tipo === "gasto")
+            .reduce<Record<string, number>>((acc, item) => {
+                const key = item.categoria?.trim() || "Sin categoría";
+                acc[key] = (acc[key] ?? 0) + Number(item.monto || 0);
+                return acc;
+            }, {});
+
+        const palette = ["#003d9b", "#006c49", "#ba1a1a", "#984100", "#7a5af8", "#0ea5e9"];
+
+        const ordered = Object.entries(groupedByCategory)
+            .map(([categoria, monto]) => ({ categoria, monto }))
+            .sort((a, b) => b.monto - a.monto);
+
+        const top = ordered.slice(0, 4);
+        const rest = ordered.slice(4).reduce((sum, current) => sum + current.monto, 0);
+        const merged = rest > 0 ? [...top, { categoria: "Otros", monto: rest }] : top;
+        const chartTotal = merged.reduce((sum, current) => sum + current.monto, 0);
+
+        const categoriesWithMeta = merged.map((item, index) => {
+            const percentage = chartTotal > 0 ? (item.monto / chartTotal) * 100 : 0;
+            return {
+                ...item,
+                percentage,
+                color: palette[index % palette.length],
+            };
+        });
+
+        const segments = categoriesWithMeta.reduce<{ segments: string[]; accumulated: number }>(
+            (acc, item) => {
+                const start = acc.accumulated;
+                const end = start + item.percentage;
+                acc.segments.push(`${item.color} ${start}% ${end}%`);
+                return { segments: acc.segments, accumulated: end };
+            },
+            { segments: [], accumulated: 0 },
+        ).segments;
+
+        const gradient =
+            segments.length > 0 ? `conic-gradient(${segments.join(",")})` : "conic-gradient(#dbe4ff 0% 100%)";
+
+        const operativo = totalIngresosValue - totalGastosValue;
+
+        return {
+            montoInicial: montoInicialValue,
+            totalIngresos: totalIngresosValue,
+            totalGastos: totalGastosValue,
+            ingresosInstantaneosCount: ingresosCount,
+            gastosInstantaneosCount: gastosCount,
+            balanceOperativo: operativo,
+            capitalDisponible: montoInicialValue + operativo,
+            categoriasGasto: categoriesWithMeta,
+            totalGastoChart: chartTotal,
+            chartGradient: gradient,
+        };
+    }, [data, profile?.monto_inicial]);
+
     return (
         <div className="main-container relative flex w-full min-h-screen pt-0 pr-0 pb-0 pl-0 flex-col items-start flex-nowrap bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
             <div className="relative min-h-screen w-full overflow-hidden bg-[#faf8ff] [font-family:'Inter-Regular',Helvetica]">
@@ -31,6 +132,12 @@ export const Dashboard = () => {
                     </header>
 
                     <section className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                        {loading && (
+                            <div className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#434654]">
+                                Cargando...
+                            </div>
+                        )}
+
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                             <div className="min-w-0">
                                 <h1 className="[font-family:'Manrope-Bold',Helvetica] text-[28px] font-bold leading-[34px] text-[#131b2e] sm:text-[34px] sm:leading-[40px]">
@@ -45,6 +152,10 @@ export const Dashboard = () => {
                                     Saludable
                                 </span>
                             </div>
+                        </div>
+
+                        <div className="rounded-[20px] border border-[rgba(0,61,155,0.15)] bg-[rgba(0,61,155,0.04)] px-4 py-3 text-[13px] leading-5 text-[#1d4ed8]">
+                            Mostrando ingresos y gastos instantáneos. Los movimientos programados aparecerán cuando se implemente ese módulo.
                         </div>
 
                         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
@@ -67,35 +178,41 @@ export const Dashboard = () => {
                                             </p>
                                         </div>
                                         <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#131b2e] break-words">
-                                            S/124,500.00
+                                            {formatCurrency(montoInicial)}
                                         </div>
                                     </div>
 
                                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6 border-t border-[#eaedff] pt-5">
                                         <div>
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
-                                                Total ingresos
+                                                Ingresos instantáneos
                                             </div>
                                             <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
-                                                Rendimiento mensual total
+                                                Movimientos registrados al momento
                                             </p>
                                         </div>
-                                        <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#006c49] break-words">
-                                            +S/42,180.50
+                                        <div className="text-right">
+                                            <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#006c49] break-words">
+                                                {formatCurrency(totalIngresos, true)}
+                                            </div>
+                                            <div className="text-[11px] text-[#64748b]">{ingresosInstantaneosCount} registro(s)</div>
                                         </div>
                                     </div>
 
                                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6 border-t border-[#eaedff] pt-5">
                                         <div>
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
-                                                Total gastos
+                                                Gastos instantáneos
                                             </div>
                                             <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
-                                                Gastos operativos
+                                                Salidas registradas al momento
                                             </p>
                                         </div>
-                                        <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#ba1a1a] break-words">
-                                            -S/18,340.20
+                                        <div className="text-right">
+                                            <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#ba1a1a] break-words">
+                                                {formatCurrency(-totalGastos, true)}
+                                            </div>
+                                            <div className="text-[11px] text-[#64748b]">{gastosInstantaneosCount} registro(s)</div>
                                         </div>
                                     </div>
 
@@ -105,11 +222,11 @@ export const Dashboard = () => {
                                                 Capital disponible actual
                                             </div>
                                             <p className="mt-1 text-[14px] leading-5 text-[rgba(29,78,216,0.6)]">
-                                                Activos líquidos
+                                                Capital inicial + balance operativo
                                             </p>
                                         </div>
                                         <div className="[font-family:'Manrope-Bold',Helvetica] text-[30px] sm:text-[30px] font-bold leading-9 text-[#003d9b] break-words">
-                                            S/148,340.30
+                                            {formatCurrency(capitalDisponible)}
                                         </div>
                                     </div>
                                 </div>
@@ -121,17 +238,17 @@ export const Dashboard = () => {
                                         Desglose de Gastos
                                     </span>
                                     <span className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold leading-5 text-[#003d9b]">
-                                        Detalles
+                                        {categoriasGasto.length}
                                     </span>
                                 </div>
 
                                 <div className="mt-8 flex flex-col items-center justify-center gap-6 rounded-[32px] bg-[#f8faff] p-4 sm:p-6 md:flex-row md:items-center md:justify-start md:gap-8 lg:gap-10 lg:p-8 overflow-hidden">
                                     <div className="relative flex h-40 w-40 shrink-0 items-center justify-center sm:h-48 sm:w-48">
-                                        <div className="absolute inset-0 rounded-full bg-[conic-gradient(#003d9b_0_45%,#006c49_45%_70%,#ba1a1a_70%_85%,#984100_85%_100%)]" />
+                                        <div className="absolute inset-0 rounded-full" style={{ background: chartGradient }} />
                                         <div className="absolute inset-5 rounded-full bg-[#faf8ff]" />
                                         <div className="relative z-10 text-center">
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[30px] font-bold leading-9 text-[#131b2e]">
-                                                18k
+                                                {Math.round(totalGastoChart).toLocaleString("en-US")}
                                             </div>
                                             <div className="text-[10px] font-bold uppercase tracking-[1px] text-[#434654]">
                                                 Gastos tot.
@@ -140,22 +257,23 @@ export const Dashboard = () => {
                                     </div>
 
                                     <div className="w-full min-w-0 space-y-4 md:w-auto md:flex-1">
-                                        <div>
-                                            <div className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold text-[#131b2e]">Activos Fijos</div>
-                                            <div className="text-[12px] text-[#434654]">45% • S/8,253.00</div>
-                                        </div>
-                                        <div>
-                                            <div className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold text-[#131b2e]">Operativo</div>
-                                            <div className="text-[12px] text-[#434654]">25% • S/4,585.05</div>
-                                        </div>
-                                        <div>
-                                            <div className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold text-[#131b2e]">Obligación Fiscal</div>
-                                            <div className="text-[12px] text-[#434654]">15% • S/2,751.03</div>
-                                        </div>
-                                        <div>
-                                            <div className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold text-[#131b2e]">Misceláneo</div>
-                                            <div className="text-[12px] text-[#434654]">15% • S/2,751.03</div>
-                                        </div>
+                                        {categoriasGasto.length === 0 ? (
+                                            <p className="text-[12px] text-[#434654]">No hay gastos registrados.</p>
+                                        ) : (
+                                            categoriasGasto.map((item) => (
+                                                <div key={item.categoria} className="flex items-center justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <div className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold text-[#131b2e] truncate">
+                                                            {item.categoria}
+                                                        </div>
+                                                        <div className="text-[12px] text-[#434654]">
+                                                            {item.percentage.toFixed(1)}% • {formatCurrency(item.monto)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
 
@@ -163,14 +281,14 @@ export const Dashboard = () => {
                                     <div className="flex items-center gap-2">
                                         <div className="h-[7px] w-[11.667px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/sEtP0HEFDG.png)] bg-cover bg-no-repeat" />
                                         <span className="[font-family:'Inter-SemiBold',Helvetica] text-[10px] font-bold uppercase tracking-[1px] text-[#006c49]">
-                                            Previsión de crecimiento
+                                            Balance operativo
                                         </span>
                                     </div>
                                     <div className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
-                                        +12.4%
+                                        {formatCurrency(balanceOperativo, true)}
                                     </div>
                                     <p className="text-[10px] leading-[15px] text-[#434654]">
-                                        Aumento proyectado en activos líquidos para el 4T.
+                                        Resultado mensual de ingresos menos gastos.
                                     </p>
                                 </div>
 
@@ -178,14 +296,14 @@ export const Dashboard = () => {
                                     <div className="flex items-center gap-2">
                                         <div className="h-[11.667px] w-[9.333px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/cR2vHwC5ha.png)] bg-cover bg-no-repeat" />
                                         <span className="[font-family:'Inter-SemiBold',Helvetica] text-[10px] font-bold uppercase tracking-[1px] text-[#ba1a1a]">
-                                            Mitigación de riesgos
+                                            Carga de gastos
                                         </span>
                                     </div>
                                     <div className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
-                                        98.2%
+                                        {totalIngresos > 0 ? `${((totalGastos / totalIngresos) * 100).toFixed(1)}%` : "0.0%"}
                                     </div>
                                     <p className="text-[10px] leading-[15px] text-[#434654]">
-                                        Nivel de confianza en el colchón de liquidez actual.
+                                        Proporción de gastos frente a ingresos.
                                     </p>
                                 </div>
                             </div>
