@@ -30,10 +30,10 @@ export const Dashboard = () => {
                         </div>
                     </header>
 
-                    <section className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-                        <div className="flex items-end justify-between gap-6">
-                            <div>
-                                <h1 className="[font-family:'Manrope-Bold',Helvetica] text-[36px] font-bold leading-10 tracking-[-0.9px] text-[#1e40af]">
+                    <section className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="min-w-0">
+                                <h1 className="[font-family:'Manrope-Bold',Helvetica] text-[28px] font-bold leading-[34px] text-[#131b2e] sm:text-[34px] sm:leading-[40px]">
                                     Resumen Ejecutivo
                                 </h1>
                                 <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[16px] leading-6 text-[#434654]">
@@ -48,7 +48,7 @@ export const Dashboard = () => {
                         </div>
 
                         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-                            <div className="rounded-[48px] bg-white p-8 shadow-[0_20px_40px_-24px_rgba(19,27,46,0.22)]">
+                            <div className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                                 <div className="flex items-start gap-2 min-w-0">
                                     <div className="h-[18px] w-[18px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AEGAVWW9Xx.png)] bg-cover bg-no-repeat" />
                                     <span className="block min-w-0 [font-family:'Manrope-Bold',Helvetica] text-[20px] sm:text-[20px] font-bold leading-7 sm:leading-7 text-[#131b2e] break-words">
@@ -99,7 +99,7 @@ export const Dashboard = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6 rounded-[32px] sm:rounded-[48px] bg-[rgba(0,61,155,0.05)] px-5 py-5 sm:px-6 sm:py-6 border border-[rgba(255,255,255,0.5)]">
+                                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6 rounded-[32px] bg-[rgba(0,61,155,0.05)] px-5 py-5 sm:px-6 sm:py-6 border border-[rgba(255,255,255,0.5)]">
                                         <div>
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-bold uppercase tracking-[1.2px] text-[#003d9b]">
                                                 Capital disponible actual
@@ -115,7 +115,7 @@ export const Dashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="rounded-[48px] bg-white p-8 shadow-[0_20px_40px_-24px_rgba(19,27,46,0.22)]">
+                            <div className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                                 <div className="flex items-start justify-between gap-4">
                                     <span className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
                                         Desglose de Gastos
