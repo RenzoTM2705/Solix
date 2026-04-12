@@ -6,24 +6,24 @@ export const DashboardSidebar = () => {
     ];
 
     return (
-        <aside className="absolute left-0 top-0 z-20 flex min-h-screen w-[288px] flex-col gap-2 bg-[#f2f3ff] px-6 py-6">
-            <div className="flex items-center gap-3 pb-6">
+        <aside className="relative z-20 flex w-full flex-col gap-2 bg-[#f2f3ff] px-4 py-4 lg:absolute lg:left-0 lg:top-0 lg:min-h-screen lg:w-[288px] lg:px-6 lg:py-6">
+            <div className="flex items-center gap-3 pb-3 lg:pb-6">
                 <div className="h-10 w-10 overflow-hidden rounded-full bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/mee9vB8FWX.png)] bg-cover bg-no-repeat" />
                 <div className="flex flex-col">
                     <span className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#003d9b]">
                         Solix
                     </span>
                     <span className="[font-family:'Inter-Regular',Helvetica] text-[10px] font-medium uppercase tracking-[0.5px] text-[#64748b]">
-                        Libro mayor etéreo
+                        Libro mayor etereo
                     </span>
                 </div>
             </div>
 
-            <nav className="flex flex-1 flex-col gap-1">
+            <nav className="flex flex-1 flex-row gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
                 {primaryItems.map(({ label, icon, active }) => (
                     <div
                         key={label}
-                        className={`flex items-center gap-3 rounded-full px-4 py-3 ${active ? "bg-white text-[#0052cc] shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]" : "text-[#434654]"}`}
+                        className={`shrink-0 flex items-center gap-3 rounded-full px-4 py-3 ${active ? "bg-white text-[#0052cc] shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]" : "text-[#434654]"}`}
                     >
                         {icon === "calendar" ? (
                             <div className="flex h-[18px] w-[18px] shrink-0 items-center justify-center text-current">
@@ -45,15 +45,15 @@ export const DashboardSidebar = () => {
                     </div>
                 ))}
 
-                <div className="mt-4 border-b border-b-[rgba(226,232,240,0.5)] pt-4" />
+                <div className="hidden mt-4 border-b border-b-[rgba(226,232,240,0.5)] pt-4 lg:block" />
 
-                <div className="flex items-center gap-3 rounded-full px-4 py-3 text-[#434654]">
+                <div className="shrink-0 flex items-center gap-3 rounded-full px-4 py-3 text-[#434654]">
                     <div
                         className="h-[18px] w-[18px] shrink-0 bg-cover bg-no-repeat"
                         style={{ backgroundImage: "url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/M8JYveLffY.png)" }}
                     />
                     <span className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[21px]">
-                        Cerrar sesión
+                        Cerrar sesion
                     </span>
                 </div>
             </nav>
