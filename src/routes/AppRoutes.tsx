@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
 import { useInactivityTimeout } from "../hooks/useInactivityTimeout";
 import { ConfigInicial } from "../screens/ConfigInicial";
+import { CambiarClave } from "../screens/CambiarClave";
 import { ConfirmacionClave } from "../screens/ConfirmacionClave";
 import { Dashboard } from "../screens/Dashboard";
 import { GastosProgramados } from "../screens/GastosProgramados";
@@ -103,6 +104,10 @@ export const AppRoutes = () => (
                     <ConfirmacionClave />
                 </RedirectIfAuth>
             )}
+        />
+        <Route
+            path="/cambiar-clave"
+            element={<CambiarClave />}
         />
         <Route
             path="/config-inicial"
