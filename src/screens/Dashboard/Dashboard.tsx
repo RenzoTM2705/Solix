@@ -39,6 +39,7 @@ export const Dashboard = () => {
         categoriasGasto,
         totalGastoChart,
         chartGradient,
+        financialHealth,
     } = useMemo(() => {
         const montoInicialValue = Number(profile?.monto_inicial ?? 0);
 
@@ -110,6 +111,29 @@ export const Dashboard = () => {
             segments.length > 0 ? `conic-gradient(${segments.join(",")})` : "conic-gradient(#dbe4ff 0% 100%)";
 
         const operativo = totalIngresosValue - totalGastosValue;
+        const projectedCapital = montoInicialValue + operativo - scheduledPending;
+
+        const highRiskThreshold = montoInicialValue > 0 ? montoInicialValue * 0.25 : 0;
+        const mediumRiskThreshold = montoInicialValue > 0 ? montoInicialValue : 0;
+
+        const financialHealth =
+            projectedCapital < 0 || (operativo < 0 && projectedCapital <= highRiskThreshold)
+                ? {
+                    label: "Alto Riesgo",
+                    badgeClass: "bg-[#ffe2e0]",
+                    textClass: "text-[#b42318]",
+                }
+                : operativo < 0 || projectedCapital < mediumRiskThreshold
+                    ? {
+                        label: "Riesgoso",
+                        badgeClass: "bg-[#fff4d6]",
+                        textClass: "text-[#8a5a00]",
+                    }
+                    : {
+                        label: "Saludable",
+                        badgeClass: "bg-[#e2e7ff]",
+                        textClass: "text-[#005236]",
+                    };
 
         return {
             montoInicial: montoInicialValue,
@@ -123,10 +147,11 @@ export const Dashboard = () => {
             gastosProgramadosPagadosCount: scheduledPaidCount,
             balanceOperativo: operativo,
             capitalDisponible: montoInicialValue + operativo,
-            capitalProyectado: montoInicialValue + operativo - scheduledPending,
+            capitalProyectado: projectedCapital,
             categoriasGasto: categoriesWithMeta,
             totalGastoChart: chartTotal,
             chartGradient: gradient,
+            financialHealth,
         };
     }, [data, scheduledData, profile?.monto_inicial]);
 
@@ -175,9 +200,9 @@ export const Dashboard = () => {
                                     Flujo de capital en tiempo real y evaluación de riesgos.
                                 </p>
                             </div>
-                            <div className="rounded-full bg-[#e2e7ff] px-4 py-2">
-                                <span className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[0.6px] text-[#005236]">
-                                    Saludable
+                            <div className={`rounded-full px-4 py-2 ${financialHealth.badgeClass}`}>
+                                <span className={`[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[0.6px] ${financialHealth.textClass}`}>
+                                    {financialHealth.label}
                                 </span>
                             </div>
                         </div>
