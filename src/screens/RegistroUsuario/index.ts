@@ -1,0 +1,1 @@
+export {RegistroUsuario} from './RegistroUsuario';
