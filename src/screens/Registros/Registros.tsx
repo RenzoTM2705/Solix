@@ -60,12 +60,22 @@ const getCategoryIcon = (tipo: TransactionType) => {
     };
 };
 
-const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
+const TABLE_GRID_CLASS = "grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr_0.8fr]";
+
+const TransactionRow = ({
+    transaction,
+    onEdit,
+    disabled,
+}: {
+    transaction: Transaction;
+    onEdit: (transaction: Transaction) => void;
+    disabled: boolean;
+}) => {
     const date = parseDate(transaction.fecha);
     const styles = getCategoryIcon(transaction.tipo);
 
     return (
-        <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative">
+        <div className={`${TABLE_GRID_CLASS} items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative`}>
             <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative">
                 <span className="flex min-h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden">
                     {date.primary}
@@ -103,13 +113,24 @@ const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
                     {formatCurrency(transaction.tipo === "ingreso" ? transaction.monto : -transaction.monto, true)}
                 </span>
             </div>
+            <div className="flex w-full pt-[24px] pr-[24px] pb-[24px] pl-[8px] justify-end items-center shrink-0 flex-nowrap relative">
+                <button
+                    type="button"
+                    onClick={() => onEdit(transaction)}
+                    disabled={disabled}
+                    className="inline-flex items-center justify-center rounded-full border border-[#c3c6d64d] px-4 py-2 [font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold leading-4 text-[#0052cc] transition-all duration-200 hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    Editar
+                </button>
+            </div>
         </div>
     );
 };
 
 export const Registros = () => {
-    const { data, loading, error, addTransaction } = useTransactions();
+    const { data, loading, error, addTransaction, editTransaction } = useTransactions();
     const [actionError, setActionError] = useState("");
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     const totals = useMemo(() => {
         const ingresos = data
@@ -171,6 +192,59 @@ export const Registros = () => {
             });
         } catch (err) {
             setActionError(getAuthErrorMessage(err));
+        }
+    };
+
+    const handleEditRegistro = async (transaction: Transaction) => {
+        setActionError("");
+
+        const tipoInput = window
+            .prompt("Tipo de movimiento: ingreso o gasto", transaction.tipo)
+            ?.toLowerCase()
+            .trim();
+
+        if (!tipoInput) {
+            return;
+        }
+
+        if (tipoInput !== "ingreso" && tipoInput !== "gasto") {
+            setActionError("El tipo debe ser ingreso o gasto.");
+            return;
+        }
+
+        const categoria = window.prompt("Categoría", transaction.categoria)?.trim() ?? "";
+        if (!categoria) {
+            setActionError("La categoría es obligatoria.");
+            return;
+        }
+
+        const descripcion = window.prompt("Descripción", transaction.descripcion)?.trim() ?? "";
+        if (!descripcion) {
+            setActionError("La descripción es obligatoria.");
+            return;
+        }
+
+        const montoRaw = window.prompt("Monto (solo número)", String(transaction.monto))?.trim() ?? "";
+        const monto = Number(montoRaw);
+
+        if (!Number.isFinite(monto) || monto <= 0) {
+            setActionError("El monto debe ser un número mayor que 0.");
+            return;
+        }
+
+        setEditingId(transaction.id);
+
+        try {
+            await editTransaction(transaction.id, {
+                tipo: tipoInput,
+                categoria,
+                descripcion,
+                monto,
+            });
+        } catch (err) {
+            setActionError(getAuthErrorMessage(err));
+        } finally {
+            setEditingId(null);
         }
     };
 
@@ -310,7 +384,7 @@ export const Registros = () => {
                         </div>
                         <div className="w-full overflow-x-auto">
                             <div className="flex min-w-[960px] flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[102]">
-                                <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-start self-stretch shrink-0 border-solid border-t border-t-[rgba(195,198,214,0.1)] relative z-[103]">
+                                <div className={`${TABLE_GRID_CLASS} items-start self-stretch shrink-0 border-solid border-t border-t-[rgba(195,198,214,0.1)] relative z-[103]`}>
                                     <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[104]">
                                         <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[105]">
                                             Fecha
@@ -336,23 +410,33 @@ export const Registros = () => {
                                             Monto
                                         </span>
                                     </div>
+                                    <div className="flex w-full pt-[20px] pr-[24px] pb-[20px] pl-[8px] flex-col items-end shrink-0 flex-nowrap relative">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-right uppercase whitespace-nowrap">
+                                            Acciones
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="flex flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[114]">
                                     {loading ? (
-                                        <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative">
-                                            <div className="col-span-5 px-8 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                        <div className={`${TABLE_GRID_CLASS} items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative`}>
+                                            <div className="col-span-6 px-8 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
                                                 Cargando transacciones...
                                             </div>
                                         </div>
                                     ) : data.length === 0 ? (
-                                        <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative">
-                                            <div className="col-span-5 px-8 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                        <div className={`${TABLE_GRID_CLASS} items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative`}>
+                                            <div className="col-span-6 px-8 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
                                                 Aún no tienes transacciones registradas.
                                             </div>
                                         </div>
                                     ) : (
                                         data.map((transaction) => (
-                                            <TransactionRow key={transaction.id} transaction={transaction} />
+                                            <TransactionRow
+                                                key={transaction.id}
+                                                transaction={transaction}
+                                                onEdit={handleEditRegistro}
+                                                disabled={editingId === transaction.id}
+                                            />
                                         ))
                                     )}
                                 </div>
