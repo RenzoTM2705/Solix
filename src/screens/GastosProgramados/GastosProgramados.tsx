@@ -32,17 +32,24 @@ const formatDate = (value: string) => {
     });
 };
 
+const formatSignedAmount = (value: number) => {
+    return `-S/ ${Math.abs(value).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
+};
+
 const getStateStyles = (estado: string) => {
     if (estado === "pagado") {
         return {
-            label: "Pagado",
+            label: "Pagados",
             badge: "text-[#00714d] bg-[#6cf8bb]",
             amount: "text-[#006c49]",
         };
     }
 
     return {
-        label: "Pendiente",
+        label: "Por pagar",
         badge: "text-[#93000a] bg-[#ffdad6]",
         amount: "text-[#ba1a1a]",
     };
@@ -73,6 +80,7 @@ const ScheduledExpenseModal = ({
     onChange,
     onSubmit,
     onDelete,
+    mode,
 }: {
     open: boolean;
     form: ScheduledExpenseForm;
@@ -81,7 +89,8 @@ const ScheduledExpenseModal = ({
     onClose: () => void;
     onChange: (field: keyof ScheduledExpenseForm, value: string) => void;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-    onDelete: () => void;
+    onDelete?: () => void;
+    mode: "add" | "edit";
 }) => {
     if (!open) {
         return null;
@@ -95,7 +104,7 @@ const ScheduledExpenseModal = ({
             >
                 <div className="mb-5 flex items-center justify-between">
                     <h3 className="[font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-[32px] text-[#131b2e]">
-                        Editar Gasto Programado
+                        {mode === "add" ? "Agregar Gasto Programado" : "Editar Gasto Programado"}
                     </h3>
                     <button
                         type="button"
@@ -175,13 +184,15 @@ const ScheduledExpenseModal = ({
                 </div>
 
                 <div className="mt-6 flex items-center justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={onDelete}
-                        className="mr-auto rounded-full border border-[rgba(186,26,26,0.25)] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#ba1a1a] hover:bg-[#fff0ef]"
-                    >
-                        Eliminar
-                    </button>
+                    {mode === "edit" && onDelete && (
+                        <button
+                            type="button"
+                            onClick={onDelete}
+                            className="mr-auto rounded-full border border-[rgba(186,26,26,0.25)] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#ba1a1a] hover:bg-[#fff0ef]"
+                        >
+                            Eliminar
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onClose}
@@ -242,56 +253,10 @@ export const GastosProgramados = () => {
 
     const handleAddScheduledTransaction = async () => {
         setActionError("");
-
-        const descripcion = window.prompt("Descripción del gasto programado:");
-        if (descripcion === null) {
-            return;
-        }
-
-        const monto = window.prompt("Monto del gasto programado:");
-        if (monto === null) {
-            return;
-        }
-
-        const categoria = window.prompt("Categoría del gasto programado:");
-        if (categoria === null) {
-            return;
-        }
-
-        const fechaProgramada = window.prompt("Fecha programada (YYYY-MM-DD):");
-        if (fechaProgramada === null) {
-            return;
-        }
-
-        const normalizedDescripcion = descripcion.trim();
-        const normalizedCategoria = categoria.trim();
-        const normalizedMonto = Number(monto);
-        const normalizedFechaProgramada = fechaProgramada.trim();
-
-        if (!normalizedDescripcion || !normalizedCategoria || !normalizedFechaProgramada) {
-            setActionError("Nombre y categoría son obligatorios.");
-            return;
-        }
-
-        if (!Number.isFinite(normalizedMonto) || normalizedMonto <= 0) {
-            setActionError("El monto debe ser un número mayor que 0.");
-            return;
-        }
-
-        setSubmittingForm(true);
-
-        try {
-            await addScheduledTransaction({
-                descripcion: normalizedDescripcion,
-                monto: normalizedMonto,
-                categoria: normalizedCategoria,
-                fecha_programada: new Date(normalizedFechaProgramada).toISOString(),
-            });
-        } catch (err) {
-            setActionError(getAuthErrorMessage(err));
-        } finally {
-            setSubmittingForm(false);
-        }
+        setModalMode("add");
+        setActiveItem(null);
+        setForm(INITIAL_FORM);
+        setModalOpen(true);
     };
 
     const handleOpenEditModal = (item: ScheduledTransaction) => {
@@ -358,6 +323,13 @@ export const GastosProgramados = () => {
                     categoria,
                     fecha_programada: new Date(form.fecha_programada).toISOString(),
                     estado: form.estado,
+                });
+            } else if (modalMode === "add") {
+                await addScheduledTransaction({
+                    descripcion,
+                    monto,
+                    categoria,
+                    fecha_programada: new Date(form.fecha_programada).toISOString(),
                 });
             }
 
@@ -544,34 +516,34 @@ export const GastosProgramados = () => {
                                 Próximos 30 días
                             </p>
                             <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#131b2e]">
-                                {formatCurrency(totals.upcomingTotal)}
+                                {formatSignedAmount(totals.upcomingTotal)}
                             </p>
                             <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
-                                {totals.upcomingCount} pagos activos
+                                {totals.upcomingCount} por vencer
                             </p>
                         </article>
 
-                        <article className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
-                            <p className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-bold uppercase tracking-[1.2px] text-[#003d9b]">
-                                Activos
-                            </p>
-                            <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#131b2e]">
-                                {formatCurrency(totals.activeTotal)}
-                            </p>
-                            <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
-                                {totals.activeCount} registros activos
-                            </p>
-                        </article>
-
-                        <article className="rounded-[32px] border-l-4 border-[#ba1a1a] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
+                        <article className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] border-l-4 border-[#ba1a1a]">
                             <p className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-bold uppercase tracking-[1.2px] text-[#ba1a1a]">
-                                Inactivos
+                                Por pagar
                             </p>
-                            <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#131b2e]">
-                                {formatCurrency(totals.inactiveTotal)}
+                            <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#ba1a1a]">
+                                {formatSignedAmount(totals.activeTotal)}
                             </p>
                             <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
-                                {totals.inactiveCount} registros inactivos
+                                {totals.activeCount} pagos pendientes
+                            </p>
+                        </article>
+
+                        <article className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] border-l-4 border-[#006c49]">
+                            <p className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-bold uppercase tracking-[1.2px] text-[#006c49]">
+                                Pagados
+                            </p>
+                            <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#006c49]">
+                                {formatSignedAmount(totals.inactiveTotal)}
+                            </p>
+                            <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                {totals.inactiveCount} pagos completados
                             </p>
                         </article>
                     </div>
@@ -658,7 +630,7 @@ export const GastosProgramados = () => {
                                                         {item.descripcion}
                                                     </td>
                                                     <td className={`px-6 py-4 [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold ${stateStyles.amount}`}>
-                                                        {formatCurrency(item.monto)}
+                                                        {item.estado === "pagado" ? `+${formatCurrency(item.monto)}` : formatSignedAmount(item.monto)}
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex flex-col items-end gap-2">
@@ -727,6 +699,7 @@ export const GastosProgramados = () => {
                 onChange={handleFormChange}
                 onSubmit={handleSubmitModal}
                 onDelete={handleDeleteFromModal}
+                mode={modalMode}
             />
         </div>
     );
