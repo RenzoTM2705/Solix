@@ -10,7 +10,7 @@ export const Registros = () => {
                         <div className="flex w-[102.88px] gap-[12px] items-center shrink-0 flex-nowrap relative z-50">
                             <div className="w-[32px] h-[32px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/kMiBtgf6O5.png)] bg-cover bg-no-repeat relative overflow-hidden z-[51]" />
                             <div className="flex w-[58.88px] flex-col items-start shrink-0 flex-nowrap relative z-[52]">
-                                <span className="h-[32px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[24px] font-extrabold leading-[32px] text-[#003d9b] relative text-left whitespace-nowrap z-[53]">
+                                <span className="h-[32px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-[32px] text-[#003d9b] relative text-left whitespace-nowrap z-[53]">
                                     Solix
                                 </span>
                             </div>
@@ -34,16 +34,16 @@ export const Registros = () => {
                                 <div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AfdAwGr5cL.png)] bg-cover bg-no-repeat relative z-[63]" />
                             </div>
                         </div>
-                        <div className="flex w-[32px] h-[32px] flex-col items-start shrink-0 flex-nowrap bg-[rgba(255,255,255,0)] rounded-full relative overflow-hidden shadow-[0_0_0_0_#dae2ff] z-[64]">
-                            <div className="w-[32px] h-[32px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/CNeY1GW2Xi.png)] bg-cover bg-no-repeat relative overflow-hidden z-[65]" />
+                        <div className="flex w-[32px] h-[32px] flex-col items-start shrink-0 flex-nowrap bg-[rgba(255,255,255,0)] rounded-full border-2 border-[rgba(0,82,204,0.2)] relative overflow-hidden shadow-[0_0_0_0_#dae2ff] z-[64]">
+                            <div className="w-[32px] h-[32px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GtEyW4VDxX.png)] bg-cover bg-no-repeat relative overflow-hidden z-[65]" />
                         </div>
                     </div>
                 </div>
-                <div className="flex px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 flex-col gap-[32px] lg:gap-[48px] items-start self-stretch shrink-0 flex-nowrap relative z-[66]">
-                    <div className="flex items-end self-stretch shrink-0 flex-nowrap relative z-[67]">
-                        <div className="flex w-full flex-col gap-[8px] items-start shrink-0 flex-nowrap relative z-[68]">
+                <div className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 items-start self-stretch shrink-0 flex-nowrap relative z-[66]">
+                    <div className="flex flex-col gap-4 self-stretch shrink-0 flex-nowrap relative z-[67] sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex w-full flex-col gap-[8px] items-start shrink-0 flex-nowrap relative z-[68] sm:w-auto sm:max-w-[620px]">
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[69]">
-                                <span className="shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[28px] sm:text-[32px] lg:text-[36px] font-bold leading-[34px] sm:leading-[38px] lg:leading-[40px] text-[#131b2e] tracking-[-0.9px] relative text-left z-[70]">
+                                <span className="shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[28px] sm:text-[34px] font-bold leading-[34px] sm:leading-[40px] text-[#131b2e] tracking-[-0.9px] relative text-left z-[70]">
                                     Registro de Transacciones
                                 </span>
                             </div>
@@ -54,46 +54,54 @@ export const Registros = () => {
                                 </span>
                             </div>
                         </div>
+                        <button
+                            type="button"
+                            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#003d9b] px-6 py-3 text-white shadow-[0_8px_10px_0_rgba(0,61,155,0.25)] transition-all duration-200 hover:bg-[#0052cc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003d9b]"
+                        >
+                            <span className="[font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-6">
+                                Agregar Registro
+                            </span>
+                        </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] self-stretch shrink-0 relative z-[73]">
-                        <div className="flex pt-[32px] pr-[32px] pb-[32px] pl-[32px] flex-col gap-[8px] items-start flex-nowrap bg-[#fff] rounded-[48px] border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[74]">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 self-stretch shrink-0 relative z-[73]">
+                        <div className="flex flex-col gap-[8px] items-start bg-[#fff] rounded-[32px] p-6 border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[74]">
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[75]">
                                 <span className="h-[20px] self-stretch shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] tracking-[0.7px] relative text-left uppercase whitespace-nowrap z-[76]">
                                     BALANCE TOTAL
                                 </span>
                             </div>
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[77]">
-                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[24px] font-extrabold leading-[36px] text-[#003d9b] relative text-left whitespace-nowrap z-[78]">
+                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#003d9b] relative text-left whitespace-nowrap z-[78]">
                                     S/124,592.00
                                 </span>
                             </div>
                         </div>
-                        <div className="flex pt-[32px] pr-[32px] pb-[32px] pl-[32px] flex-col gap-[8px] items-start flex-nowrap bg-[#fff] rounded-[48px] border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[79]">
+                        <div className="flex flex-col gap-[8px] items-start bg-[#fff] rounded-[32px] p-6 border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[79]">
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[80]">
                                 <span className="h-[20px] self-stretch shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] tracking-[0.7px] relative text-left uppercase whitespace-nowrap z-[81]">
                                     INGRESOS MENSUALES
                                 </span>
                             </div>
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[82]">
-                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[24px] font-extrabold leading-[36px] text-[#006c49] relative text-left whitespace-nowrap z-[83]">
+                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#006c49] relative text-left whitespace-nowrap z-[83]">
                                     +S/12,400.00
                                 </span>
                             </div>
                         </div>
-                        <div className="flex pt-[32px] pr-[32px] pb-[32px] pl-[32px] flex-col gap-[8px] items-start flex-nowrap bg-[#fff] rounded-[48px] border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[84]">
+                        <div className="flex flex-col gap-[8px] items-start bg-[#fff] rounded-[32px] p-6 border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[84]">
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[85]">
                                 <span className="h-[20px] self-stretch shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] tracking-[0.7px] relative text-left uppercase whitespace-nowrap z-[86]">
                                     GASTOS MENSUALES
                                 </span>
                             </div>
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[87]">
-                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[24px] font-extrabold leading-[36px] text-[#ba1a1a] relative text-left whitespace-nowrap z-[88]">
+                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#ba1a1a] relative text-left whitespace-nowrap z-[88]">
                                     -S/8,240.00
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap bg-[#fff] rounded-[48px] border-solid border border-[rgba(195,198,214,0.1)] relative overflow-hidden shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[89]">
+                    <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap bg-[#fff] rounded-[32px] border-solid border border-[rgba(195,198,214,0.1)] relative overflow-hidden shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[89]">
                         <div className="flex pt-[24px] pr-[32px] pb-[24px] pl-[32px] justify-between items-center self-stretch shrink-0 flex-nowrap bg-[rgba(242,243,255,0.5)] relative z-[90]">
                             <div className="flex w-[164.28px] flex-col items-start shrink-0 flex-nowrap relative z-[91]">
                                 <span className="h-[28px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-[28px] text-[#131b2e] relative text-left whitespace-nowrap z-[92]">
@@ -123,27 +131,27 @@ export const Registros = () => {
                         <div className="flex min-w-[960px] flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[102]">
                             <div className="grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr] items-start self-stretch shrink-0 border-solid border-t border-t-[rgba(195,198,214,0.1)] relative z-[103]">
                                 <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[104]">
-                                    <span className="h-[20px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[14px] font-bold leading-[20px] text-[#434654] tracking-[0.35px] relative text-left whitespace-nowrap z-[105]">
+                                    <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[105]">
                                         Fecha
                                     </span>
                                 </div>
                                 <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[106]">
-                                    <span className="h-[20px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[14px] font-bold leading-[20px] text-[#434654] tracking-[0.35px] relative text-left whitespace-nowrap z-[107]">
+                                    <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[107]">
                                         Tipo
                                     </span>
                                 </div>
                                 <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[108]">
-                                    <span className="h-[20px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[14px] font-bold leading-[20px] text-[#434654] tracking-[0.35px] relative text-left whitespace-nowrap z-[109]">
+                                    <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[109]">
                                         Categoría
                                     </span>
                                 </div>
                                 <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[110]">
-                                    <span className="h-[20px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[14px] font-bold leading-[20px] text-[#434654] tracking-[0.35px] relative text-left whitespace-nowrap z-[111]">
+                                    <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[111]">
                                         Descripción
                                     </span>
                                 </div>
                                 <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative z-[112]">
-                                    <span className="flex w-[45.47px] h-[20px] justify-end items-center shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[14px] font-bold leading-[20px] text-[#434654] tracking-[0.35px] relative text-right whitespace-nowrap z-[113]">
+                                    <span className="flex w-[45.47px] h-[16px] justify-end items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-right uppercase whitespace-nowrap z-[113]">
                                         Monto
                                     </span>
                                 </div>
