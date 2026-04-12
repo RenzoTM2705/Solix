@@ -1,0 +1,1 @@
+export {GastosProgramados} from './GastosProgramados';
