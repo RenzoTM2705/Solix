@@ -1,4 +1,5 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
+import { ProfileMenu } from "../../components/ProfileMenu";
 import { useTransactions } from "../../hooks/useTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { Transaction, TransactionType } from "../../types/transaction";
@@ -451,7 +452,7 @@ export const Registros = () => {
         <div className="main-container relative flex w-full min-h-screen flex-col items-start bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
             <DashboardSidebar />
             <div className="flex min-h-screen w-full pt-0 pr-0 pb-[2px] pl-0 flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[47] lg:w-[calc(100%-288px)] lg:ml-[288px]">
-                <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 self-stretch shrink-0 flex-nowrap bg-[rgba(250,248,255,0.8)] relative z-[48]">
+                <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 self-stretch shrink-0 flex-nowrap bg-[rgba(250,248,255,0.8)] relative z-[300]">
                     <div className="flex w-full pt-0 pr-0 pb-0 pl-0 items-center shrink-0 flex-nowrap relative z-[49] sm:w-auto sm:pr-[32px]">
                         <div className="flex w-[102.88px] gap-[12px] items-center shrink-0 flex-nowrap relative z-50">
                             <div className="w-[32px] h-[32px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/kMiBtgf6O5.png)] bg-cover bg-no-repeat relative overflow-hidden z-[51]" />
@@ -480,9 +481,7 @@ export const Registros = () => {
                                 <div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AfdAwGr5cL.png)] bg-cover bg-no-repeat relative z-[63]" />
                             </div>
                         </div>
-                        <div className="flex w-[32px] h-[32px] flex-col items-start shrink-0 flex-nowrap bg-[rgba(255,255,255,0)] rounded-full border-2 border-[rgba(0,82,204,0.2)] relative overflow-hidden shadow-[0_0_0_0_#dae2ff] z-[64]">
-                            <div className="w-[32px] h-[32px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GtEyW4VDxX.png)] bg-cover bg-no-repeat relative overflow-hidden z-[65]" />
-                        </div>
+                        <ProfileMenu avatarClassName="h-8 w-8" />
                     </div>
                 </div>
                 <div className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 items-start self-stretch shrink-0 flex-nowrap relative z-[66]">
