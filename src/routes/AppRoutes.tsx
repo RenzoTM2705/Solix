@@ -6,6 +6,7 @@ import { ConfigInicial } from "../screens/ConfigInicial";
 import { Dashboard } from "../screens/Dashboard";
 import { GastosProgramados } from "../screens/GastosProgramados";
 import { Login } from "../screens/Login";
+import { RecuperarClave } from "../screens/RecuperarClave";
 import { RegistroUsuario } from "../screens/RegistroUsuario";
 import { Registros } from "../screens/Registros";
 
@@ -83,6 +84,14 @@ export const AppRoutes = () => (
             element={(
                 <RedirectIfAuth>
                     <RegistroUsuario />
+                </RedirectIfAuth>
+            )}
+        />
+        <Route
+            path="/recuperar-clave"
+            element={(
+                <RedirectIfAuth>
+                    <RecuperarClave />
                 </RedirectIfAuth>
             )}
         />
