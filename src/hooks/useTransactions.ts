@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
-import { createTransaction, getTransactions } from "../services/transactions.service";
-import type { CreateTransactionInput, Transaction } from "../types/transaction";
+import { createTransaction, getTransactions, updateTransaction as updateTransactionService } from "../services/transactions.service";
+import type { CreateTransactionInput, Transaction, UpdateTransactionInput } from "../types/transaction";
 import { getAuthErrorMessage } from "../services/auth.service";
 
 export const useTransactions = () => {
@@ -47,6 +47,19 @@ export const useTransactions = () => {
         [user?.id],
     );
 
+    const editTransaction = useCallback(
+        async (id: string, payload: UpdateTransactionInput) => {
+            if (!user?.id) {
+                throw new Error("Debes iniciar sesión para editar transacciones.");
+            }
+
+            const updated = await updateTransactionService(id, user.id, payload);
+            setData((prev) => prev.map((item) => (item.id === id ? updated : item)));
+            return updated;
+        },
+        [user?.id],
+    );
+
     useEffect(() => {
         refreshTransactions();
     }, [refreshTransactions]);
@@ -56,6 +69,7 @@ export const useTransactions = () => {
         loading,
         error,
         addTransaction,
+        editTransaction,
         refreshTransactions,
     };
 };
