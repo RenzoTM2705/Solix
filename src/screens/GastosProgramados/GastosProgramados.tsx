@@ -228,6 +228,8 @@ export const GastosProgramados = () => {
     const [activeItem, setActiveItem] = useState<ScheduledTransaction | null>(null);
     const [form, setForm] = useState<ScheduledExpenseForm>(INITIAL_FORM);
     const [submittingForm, setSubmittingForm] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 4;
 
     const totals = useMemo(() => {
         const now = new Date();
@@ -250,6 +252,23 @@ export const GastosProgramados = () => {
             inactiveCount: paidItems.length,
         };
     }, [data]);
+
+    const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return data.slice(start, start + pageSize);
+    }, [currentPage, data]);
+
+    const pageNumbers = useMemo(() => {
+        return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }, [totalPages]);
 
     const handleAddScheduledTransaction = async () => {
         setActionError("");
@@ -336,6 +355,7 @@ export const GastosProgramados = () => {
             setModalOpen(false);
             setActiveItem(null);
             setForm(INITIAL_FORM);
+            setCurrentPage(1);
         } catch (err) {
             setActionError(getAuthErrorMessage(err));
         } finally {
@@ -361,6 +381,7 @@ export const GastosProgramados = () => {
             setModalOpen(false);
             setActiveItem(null);
             setForm(INITIAL_FORM);
+            setCurrentPage(1);
         } catch (err) {
             setActionError(getAuthErrorMessage(err));
         } finally {
@@ -611,7 +632,7 @@ export const GastosProgramados = () => {
                                             </td>
                                         </tr>
                                     ) : (
-                                        data.map((item) => {
+                                        paginatedData.map((item) => {
                                             const stateStyles = getStateStyles(item.estado);
 
                                             return (
@@ -656,34 +677,51 @@ export const GastosProgramados = () => {
 
                         <div className="flex flex-col gap-3 bg-[#f2f3ff] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                             <p className="[font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
-                                Mostrando {data.length} gastos programados
+                                Mostrando {paginatedData.length} de {data.length} gastos programados
                             </p>
                             <div className="flex w-full sm:w-[232px] gap-[8px] items-start justify-center sm:justify-start shrink-0 flex-nowrap relative z-[182]">
-                                <div className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[183]">
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[183] hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
                                     <div className="flex w-[7.4px] flex-col items-center shrink-0 flex-nowrap relative z-[184]">
                                         <div className="w-[7.4px] h-[12px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/ySHF1wAAtB.png)] bg-cover bg-no-repeat relative z-[185]" />
                                     </div>
-                                </div>
-                                <div className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap bg-[#0052cc] rounded-full relative z-[186]">
-                                    <span className="flex w-[6.91px] h-[24px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-[24px] text-[#fff] relative text-center whitespace-nowrap z-[187]">
-                                        1
-                                    </span>
-                                </div>
-                                <div className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[188]">
-                                    <span className="flex w-[9.77px] h-[24px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[16px] font-normal leading-[24px] text-[#434654] relative text-center whitespace-nowrap z-[189]">
-                                        2
-                                    </span>
-                                </div>
-                                <div className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[190]">
-                                    <span className="flex w-[9.89px] h-[24px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[16px] font-normal leading-[24px] text-[#434654] relative text-center whitespace-nowrap z-[191]">
-                                        3
-                                    </span>
-                                </div>
-                                <div className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[192]">
+                                </button>
+                                {pageNumbers.map((pageNumber) => {
+                                    const isActive = pageNumber === currentPage;
+
+                                    return (
+                                        <button
+                                            key={pageNumber}
+                                            type="button"
+                                            onClick={() => setCurrentPage(pageNumber)}
+                                            className={`flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border relative transition-all duration-200 ${
+                                                isActive
+                                                    ? "bg-[#0052cc] border-[#0052cc]"
+                                                    : "border-[rgba(195,198,214,0.3)] hover:bg-[#f2f3ff]"
+                                            }`}
+                                        >
+                                            <span className={`flex h-[24px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-[24px] relative text-center whitespace-nowrap ${
+                                                isActive ? "text-[#fff]" : "text-[#434654]"
+                                            }`}>
+                                                {pageNumber}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[192] hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
                                     <div className="flex w-[7.4px] flex-col items-center shrink-0 flex-nowrap relative z-[193]">
                                         <div className="w-[7.4px] h-[12px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/1RJYiJee7R.png)] bg-cover bg-no-repeat relative z-[194]" />
                                     </div>
-                                </div>
+                                </button>
                             </div>
                         </div>
                     </div>
