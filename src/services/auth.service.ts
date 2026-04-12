@@ -78,6 +78,17 @@ export const signIn = async (email: string, password: string, rememberMe: boolea
     return data;
 };
 
+export const requestPasswordReset = async (email: string) => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
+};
+
 export const signOut = async () => {
     const supabase = getSupabaseClient();
     const { error } = await supabase.auth.signOut();

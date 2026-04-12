@@ -124,12 +124,12 @@ export const Login = () => {
                                         </label>
                                     </div>
                                     <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
-                                        <a
-                                            href="#"
+                                        <Link
+                                            to="/recuperar-clave"
                                             className="flex items-center [font-family:'Inter-SemiBold',Helvetica] font-semibold text-[#003d9b] text-xs tracking-[0] leading-4 whitespace-nowrap relative w-fit mt-[-1.00px]"
                                         >
                                             ¿Olvidaste tu contraseña?
-                                        </a>
+                                        </Link>
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
