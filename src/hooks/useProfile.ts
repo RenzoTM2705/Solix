@@ -32,10 +32,11 @@ const fetchProfileCached = (userId: string, force = false) => {
 export const useProfile = () => {
     const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const inFlightRef = useRef(false);
 
     const refreshProfile = useCallback(async (force = false) => {
-        if (loading) {
+        if (inFlightRef.current && !force) {
             return;
         }
 
@@ -50,14 +51,16 @@ export const useProfile = () => {
             return;
         }
 
+        inFlightRef.current = true;
         setLoading(true);
         try {
             const nextProfile = await fetchProfileCached(user.id, force);
             setProfile(nextProfile);
         } finally {
+            inFlightRef.current = false;
             setLoading(false);
         }
-    }, [authLoading, loading, user?.id]);
+    }, [authLoading, user?.id]);
 
     const refreshProfileRef = useRef(refreshProfile);
 
