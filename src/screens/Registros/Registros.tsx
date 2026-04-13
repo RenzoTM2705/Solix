@@ -8,6 +8,7 @@ import type { Transaction, TransactionType } from "../../types/transaction";
 import { useEffect, useMemo, useState } from "react";
 import type { RegistrosFilters } from "../../utils/registrosFilters";
 import { INITIAL_REGISTROS_FILTERS, filterTransactions } from "../../utils/registrosFilters";
+import { formatDateInPeru, getPeruCalendarDate } from "../../utils/peruDate";
 
 const formatCurrency = (value: number, withSign = false) => {
     const abs = Math.abs(value).toLocaleString("en-US", {
@@ -24,22 +25,22 @@ const formatCurrency = (value: number, withSign = false) => {
 };
 
 const parseDate = (fecha: string) => {
-    const parsed = new Date(fecha);
-    if (Number.isNaN(parsed.getTime())) {
+    const parsed = formatDateInPeru(fecha, {
+        day: "2-digit",
+        month: "short",
+    });
+
+    if (parsed === fecha) {
         return { primary: fecha, year: "" };
     }
 
-    const primary = parsed
-        .toLocaleDateString("es-PE", {
-            day: "2-digit",
-            month: "short",
-        })
-        .replace(".", "")
-        .replace(" ", " ");
+    const year = formatDateInPeru(fecha, {
+        year: "numeric",
+    });
 
     return {
-        primary: `${primary},`,
-        year: String(parsed.getFullYear()),
+        primary: `${parsed.replace(".", "").replace(" ", " ")},`,
+        year,
     };
 };
 
@@ -417,7 +418,7 @@ export const Registros = () => {
         try {
             if (modalMode === "add") {
                 await addTransaction({
-                    fecha: new Date().toISOString(),
+                    fecha: getPeruCalendarDate(),
                     tipo,
                     categoria,
                     descripcion,
@@ -489,7 +490,11 @@ export const Registros = () => {
         ];
 
         const rows = filteredData.map((tx) => ({
-            fecha_formatted: new Date(tx.fecha).toLocaleDateString("es-PE"),
+            fecha_formatted: formatDateInPeru(tx.fecha, {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }),
             tipo_display: tx.tipo === "ingreso" ? "Ingreso" : "Gasto",
             categoria: tx.categoria,
             descripcion: tx.descripcion,

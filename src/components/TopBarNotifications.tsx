@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useProfile } from "../hooks/useProfile";
 import { useScheduledTransactions } from "../hooks/useScheduledTransactions";
 import { useTransactions } from "../hooks/useTransactions";
+import { parseDateInPeru } from "../utils/peruDate";
 
 type NotificationItem = {
     id: string;
@@ -53,12 +54,12 @@ export const TopBarNotifications = ({ top, left, width, contentMaxHeight, nowTim
 
         const pendingScheduled = scheduledTransactions.filter((item) => item.estado === "pendiente");
         const dueToday = pendingScheduled.filter((item) => {
-            const date = new Date(item.fecha_programada);
-            return !Number.isNaN(date.getTime()) && getDayDifference(date, now) === 0;
+            const date = parseDateInPeru(item.fecha_programada);
+            return !!date && getDayDifference(date, now) === 0;
         });
         const dueTomorrow = pendingScheduled.filter((item) => {
-            const date = new Date(item.fecha_programada);
-            return !Number.isNaN(date.getTime()) && getDayDifference(date, now) === 1;
+            const date = parseDateInPeru(item.fecha_programada);
+            return !!date && getDayDifference(date, now) === 1;
         });
 
         if (dueToday.length > 0) {
@@ -84,7 +85,11 @@ export const TopBarNotifications = ({ top, left, width, contentMaxHeight, nowTim
         if (expenses.length > 0) {
             const averageExpense = expenses.reduce((sum, item) => sum + Number(item.monto || 0), 0) / expenses.length;
             const sortedExpenses = [...expenses].sort(
-                (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
+                (a, b) => {
+                    const dateB = parseDateInPeru(b.fecha)?.getTime() ?? 0;
+                    const dateA = parseDateInPeru(a.fecha)?.getTime() ?? 0;
+                    return dateB - dateA;
+                },
             );
             const unusualExpense = sortedExpenses.find(
                 (item) => Number(item.monto || 0) >= Math.max(averageExpense * 1.8, 100),
@@ -101,8 +106,8 @@ export const TopBarNotifications = ({ top, left, width, contentMaxHeight, nowTim
         }
 
         const monthlyExpenses = expenses.filter((item) => {
-            const date = new Date(item.fecha);
-            return !Number.isNaN(date.getTime()) && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+            const date = parseDateInPeru(item.fecha);
+            return !!date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
         });
         const monthlyTotal = monthlyExpenses.reduce((sum, item) => sum + Number(item.monto || 0), 0);
         const monthlyBudget = Number(profile?.monto_inicial ?? 0);
@@ -127,8 +132,8 @@ export const TopBarNotifications = ({ top, left, width, contentMaxHeight, nowTim
         }
 
         const todayExpenses = expenses.filter((item) => {
-            const date = new Date(item.fecha);
-            return !Number.isNaN(date.getTime()) && getDayDifference(date, now) === 0;
+            const date = parseDateInPeru(item.fecha);
+            return !!date && getDayDifference(date, now) === 0;
         });
         if (todayExpenses.length > 0) {
             const totalToday = todayExpenses.reduce((sum, item) => sum + Number(item.monto || 0), 0);
@@ -146,15 +151,15 @@ export const TopBarNotifications = ({ top, left, width, contentMaxHeight, nowTim
 
         const currentWeekTotal = expenses
             .filter((item) => {
-                const date = new Date(item.fecha);
-                return !Number.isNaN(date.getTime()) && date >= currentWeekStart;
+                const date = parseDateInPeru(item.fecha);
+                return !!date && date >= currentWeekStart;
             })
             .reduce((sum, item) => sum + Number(item.monto || 0), 0);
 
         const previousWeekTotal = expenses
             .filter((item) => {
-                const date = new Date(item.fecha);
-                return !Number.isNaN(date.getTime()) && date >= previousWeekStart && date < currentWeekStart;
+                const date = parseDateInPeru(item.fecha);
+                return !!date && date >= previousWeekStart && date < currentWeekStart;
             })
             .reduce((sum, item) => sum + Number(item.monto || 0), 0);
 
@@ -168,7 +173,11 @@ export const TopBarNotifications = ({ top, left, width, contentMaxHeight, nowTim
         }
 
         const sortedByDate = [...transactions].sort(
-            (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
+            (a, b) => {
+                const dateB = parseDateInPeru(b.fecha)?.getTime() ?? 0;
+                const dateA = parseDateInPeru(a.fecha)?.getTime() ?? 0;
+                return dateB - dateA;
+            },
         );
         const lastMovement = sortedByDate[0];
 
@@ -180,7 +189,8 @@ export const TopBarNotifications = ({ top, left, width, contentMaxHeight, nowTim
                 level: "info",
             });
         } else {
-            const daysWithoutActivity = getDayDifference(now, new Date(lastMovement.fecha));
+            const lastMovementDate = parseDateInPeru(lastMovement.fecha);
+            const daysWithoutActivity = lastMovementDate ? getDayDifference(now, lastMovementDate) : 0;
             if (daysWithoutActivity >= 3) {
                 items.push({
                     id: "inactivity-warning",
