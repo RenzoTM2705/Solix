@@ -6,7 +6,25 @@ import { ProfileMenu } from "../../components/ProfileMenu";
 import { useAuth } from "../../hooks/useAuth";
 import { useProfile } from "../../hooks/useProfile";
 import { createProfile, updateProfile } from "../../services/profile.service";
-import { getAuthErrorMessage } from "../../services/auth.service";
+
+const getProfileSaveErrorMessage = (error: unknown) => {
+    const message =
+        typeof error === "object" && error !== null && "message" in error
+            ? String((error as { message?: string }).message ?? "")
+            : "";
+
+    const normalized = message.toLowerCase();
+
+    if (normalized.includes("row-level security") || normalized.includes("permission denied")) {
+        return "No tienes permisos para guardar el capital inicial. Revisa las políticas de Supabase.";
+    }
+
+    if (normalized.includes("duplicate key")) {
+        return "Ya existe una configuración inicial para este usuario.";
+    }
+
+    return "No se pudo guardar tu capital inicial. Inténtalo nuevamente.";
+};
 
 export const ConfigInicial = () => {
     const [montoInicial, setMontoInicial] = useState("");
@@ -76,7 +94,7 @@ export const ConfigInicial = () => {
 
             navigate("/dashboard", { replace: true });
         } catch (err) {
-            setError(getAuthErrorMessage(err));
+            setError(getProfileSaveErrorMessage(err));
         } finally {
             setIsSaving(false);
         }

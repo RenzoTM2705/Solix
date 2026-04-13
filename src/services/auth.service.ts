@@ -2,6 +2,13 @@
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseClient } from "./supabase";
 
+const getAppUrl = (path: string) => {
+    const appBaseUrl = import.meta.env.VITE_APP_URL?.trim() || window.location.origin;
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+    return `${appBaseUrl}${normalizedPath}`;
+};
+
 export const getAuthErrorMessage = (error: unknown) => {
     const message =
         typeof error === "object" && error !== null && "message" in error
@@ -38,6 +45,9 @@ export const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+            emailRedirectTo: getAppUrl("/"),
+        },
     });
 
     if (error) {
@@ -82,7 +92,7 @@ export const signIn = async (email: string, password: string, rememberMe: boolea
 export const requestPasswordReset = async (email: string) => {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/cambiar-clave`,
+        redirectTo: getAppUrl("/cambiar-clave"),
     });
 
     if (error) {
