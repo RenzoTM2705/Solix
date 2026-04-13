@@ -21,6 +21,10 @@ export const getAuthErrorMessage = (error: unknown) => {
         return "Este correo ya está registrado. Inicia sesión o usa otro correo.";
     }
 
+    if (normalized.includes("email_already_registered")) {
+        return "Este correo ya está registrado. Inicia sesión o usa otro correo.";
+    }
+
     if (normalized.includes("invalid login credentials")) {
         return "Credenciales inválidas. Verifica tu correo y contraseña.";
     }
@@ -57,6 +61,13 @@ export const signUp = async (email: string, password: string, fullName?: string)
 
     if (error) {
         throw error;
+    }
+
+    // Supabase puede devolver éxito sin crear usuario cuando el correo ya existe
+    // para evitar enumeración. En ese caso, identities llega vacío.
+    const identities = data.user?.identities ?? [];
+    if (identities.length === 0) {
+        throw new Error("email_already_registered");
     }
 
     return data;
