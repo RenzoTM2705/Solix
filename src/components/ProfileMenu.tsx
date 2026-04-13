@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useProfile } from "../hooks/useProfile";
+import { getAuthErrorMessage, updateUserAvatar } from "../services/auth.service";
 
 type ProfileMenuProps = {
     className?: string;
@@ -10,8 +12,15 @@ type ProfileMenuProps = {
 export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: ProfileMenuProps) => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { profile, refreshProfile } = useProfile();
     const [open, setOpen] = useState(false);
+    const [avatarError, setAvatarError] = useState("");
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    const avatarUrl = profile?.avatar_url
+        || (typeof user?.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : "");
 
     useEffect(() => {
         const handleOutsideInteraction = (event: MouseEvent | TouchEvent) => {
@@ -52,8 +61,55 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
         navigate("/", { replace: true });
     };
 
+    const handleAvatarClick = () => {
+        setAvatarError("");
+        fileInputRef.current?.click();
+    };
+
+    const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+
+        if (!file || !user?.id) {
+            return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+            setAvatarError("Selecciona una imagen válida.");
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            setAvatarError("La imagen no debe superar 2MB.");
+            return;
+        }
+
+        try {
+            setUploadingAvatar(true);
+            setAvatarError("");
+            await updateUserAvatar(user.id, file);
+            await refreshProfile();
+            setOpen(false);
+        } catch (error) {
+            const message =
+                typeof error === "object" && error !== null && "message" in error
+                    ? String((error as { message?: string }).message ?? "")
+                    : "";
+            setAvatarError(message || getAuthErrorMessage(error));
+        } finally {
+            setUploadingAvatar(false);
+            event.target.value = "";
+        }
+    };
+
     return (
         <div ref={menuRef} className={`relative ${className}`}>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+            />
             <button
                 type="button"
                 aria-label="Abrir menú de perfil"
@@ -62,9 +118,13 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
                 onClick={() => setOpen((current) => !current)}
                 className="rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]"
             >
-                <div
-                    className={`${avatarClassName} overflow-hidden rounded-full border border-[rgba(0,82,204,0.14)] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GtEyW4VDxX.png)] bg-cover bg-no-repeat shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]`}
-                />
+                <div className={`${avatarClassName} overflow-hidden rounded-full border border-[rgba(0,82,204,0.14)] bg-[#eaf0ff] shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]`}>
+                    {avatarUrl ? (
+                        <img src={avatarUrl} alt="Foto de perfil" className="h-full w-full object-cover" />
+                    ) : (
+                        <div className="h-full w-full bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GtEyW4VDxX.png)] bg-cover bg-no-repeat" />
+                    )}
+                </div>
             </button>
 
             {open && (
@@ -79,6 +139,41 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
                     </div>
 
                     <div className="p-2">
+                        {user && (
+                            <button
+                                type="button"
+                                onClick={handleAvatarClick}
+                                disabled={uploadingAvatar}
+                                className="mb-2 flex w-full items-center gap-3 rounded-[18px] px-4 py-3 text-left text-[#434654] transition-colors hover:bg-[#f2f3ff] hover:text-[#0052cc] disabled:cursor-not-allowed disabled:opacity-70"
+                            >
+                                <svg
+                                    className="h-[18px] w-[18px] shrink-0"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M4 8.5C4 7.67157 4.67157 7 5.5 7H8L9.2 5.2C9.47836 4.78246 9.94715 4.5 10.45 4.5H13.55C14.0528 4.5 14.5216 4.78246 14.8 5.2L16 7H18.5C19.3284 7 20 7.67157 20 8.5V17.5C20 18.3284 19.3284 19 18.5 19H5.5C4.67157 19 4 18.3284 4 17.5V8.5Z"
+                                        stroke="currentColor"
+                                        strokeWidth="1.8"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                    <circle cx="12" cy="13" r="3.25" stroke="currentColor" strokeWidth="1.8" />
+                                </svg>
+                                <span className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[21px]">
+                                    {uploadingAvatar ? "Subiendo foto..." : "Cambiar foto"}
+                                </span>
+                            </button>
+                        )}
+
+                        {avatarError && (
+                            <p className="mb-2 px-4 [font-family:'Inter-Regular',Helvetica] text-[12px] text-[#dc2626]">
+                                {avatarError}
+                            </p>
+                        )}
+
                         {user ? (
                             <button
                                 type="button"

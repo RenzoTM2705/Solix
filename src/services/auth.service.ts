@@ -91,6 +91,44 @@ export const requestPasswordReset = async (email: string) => {
     return data;
 };
 
+export const updateUserAvatar = async (userId: string, file: File) => {
+    const supabase = getSupabaseClient();
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const filePath = `${userId}/avatar.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) {
+        throw uploadError;
+    }
+
+    const { data: publicData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    const avatarUrl = `${publicData.publicUrl}?t=${Date.now()}`;
+
+    const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", userId);
+
+    if (profileError) {
+        throw profileError;
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+        data: {
+            avatar_url: avatarUrl,
+        },
+    });
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
+};
+
 export const updatePassword = async (newPassword: string) => {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.updateUser({
