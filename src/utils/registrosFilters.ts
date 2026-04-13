@@ -1,5 +1,6 @@
 // Filtros y helpers para el historial de registros financieros.
 import type { Transaction } from "../types/transaction";
+import { parseDateInPeru } from "./peruDate";
 
 export interface RegistrosFilters {
     dateRange: "today" | "last7" | "thisMonth" | "custom";
@@ -52,8 +53,8 @@ export const filterTransactions = (transactions: Transaction[], filters: Registr
             filters.dateStart,
             filters.dateEnd
         );
-        const txDate = new Date(transaction.fecha);
-        if (txDate < startDate || txDate > endDate) {
+        const txDate = parseDateInPeru(transaction.fecha);
+        if (!txDate || txDate < startDate || txDate > endDate) {
             return false;
         }
 
