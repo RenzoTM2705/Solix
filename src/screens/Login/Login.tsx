@@ -217,28 +217,6 @@ export const Login = () => {
                                 </span>
                             </button>
                         </div>
-                        <div className="flex items-center gap-4 relative self-stretch w-full flex-[0_0_auto]">
-                            <div className="relative flex-1 grow h-px bg-[#c3c6d64c]" />
-                            <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
-                                <span className="flex items-center [font-family:'Inter-Regular',Helvetica] font-normal text-[#737685] text-xs tracking-[1.20px] leading-4 whitespace-nowrap relative w-fit mt-[-1.00px]">
-                                    O CONTINÚA CON
-                                </span>
-                            </div>
-                            <div className="relative flex-1 grow h-px bg-[#c3c6d64c]" />
-                        </div>
-                        <div className="grid grid-cols-1 grid-rows-[54px] h-fit gap-4 w-full">
-                            <button
-                                type="button"
-                                className="all-[unset] box-border w-full px-4 py-4 relative inline-flex items-center justify-center gap-2 bg-[#eaedff] rounded-full border border-solid border-[#c3c6d633] cursor-pointer"
-                            >
-                                <div className="relative w-5 h-5 bg-[url(/google.png)] bg-cover bg-[50%_50%]" />
-                                <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                                    <span className="relative flex items-center justify-center w-fit mt-[-1.00px] [font-family:'Inter-SemiBold',Helvetica] font-semibold text-[#131b2e] text-sm text-center tracking-[0] leading-5 whitespace-nowrap">
-                                        Continuar con Google
-                                    </span>
-                                </div>
-                            </button>
-                        </div>
                         <div className="flex items-start justify-center gap-1 pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto]">
                             <span className="flex items-center justify-center [font-family:'Inter-Regular',Helvetica] font-normal text-[#434654] text-base text-center tracking-[0] leading-6 whitespace-nowrap relative w-fit mt-[-1.00px]">
                                 ¿No tienes una cuenta?
