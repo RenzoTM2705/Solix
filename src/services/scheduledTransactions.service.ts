@@ -1,3 +1,4 @@
+// CRUD para gastos programados persistidos en Supabase.
 import { getSupabaseClient } from "./supabase";
 import type {
     CreateScheduledTransactionInput,

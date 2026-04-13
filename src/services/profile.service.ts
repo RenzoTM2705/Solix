@@ -1,3 +1,4 @@
+// Acceso CRUD al perfil del usuario en la tabla public.profiles.
 import { getSupabaseClient } from "./supabase";
 import type { Profile } from "../types/profile";
 

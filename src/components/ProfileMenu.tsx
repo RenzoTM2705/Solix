@@ -1,3 +1,4 @@
+// Menú de perfil con avatar editable, acceso a login/logout y carga de imagen.
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -9,6 +10,7 @@ type ProfileMenuProps = {
     avatarClassName?: string;
 };
 
+// Muestra el avatar del usuario y las acciones de sesión y perfil.
 export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: ProfileMenuProps) => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
@@ -46,6 +48,7 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
         };
     }, []);
 
+    // Cierra la sesión actual y devuelve al usuario al login.
     const handleLogout = async () => {
         try {
             await logout();
@@ -56,16 +59,19 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
         }
     };
 
+    // Lleva al usuario a la pantalla de acceso.
     const handleLogin = () => {
         setOpen(false);
         navigate("/", { replace: true });
     };
 
+    // Abre el selector de archivos para cambiar la foto.
     const handleAvatarClick = () => {
         setAvatarError("");
         fileInputRef.current?.click();
     };
 
+    // Valida la imagen elegida y la sube al perfil del usuario.
     const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
 

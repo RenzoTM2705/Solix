@@ -1,3 +1,4 @@
+// Operaciones de lectura y escritura para movimientos financieros.
 import { getSupabaseClient } from "./supabase";
 import type { CreateTransactionInput, Transaction, UpdateTransactionInput } from "../types/transaction";
 

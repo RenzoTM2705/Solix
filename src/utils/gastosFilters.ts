@@ -1,3 +1,4 @@
+// Filtros y helpers para la vista de gastos programados.
 import type { ScheduledTransaction } from "../types/scheduledTransaction";
 
 export interface GastosFilters {

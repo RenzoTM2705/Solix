@@ -1,3 +1,4 @@
+// Genera exportaciones PDF para reportes de tablas financieras.
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 

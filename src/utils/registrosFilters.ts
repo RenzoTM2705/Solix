@@ -1,3 +1,4 @@
+// Filtros y helpers para el historial de registros financieros.
 import type { Transaction } from "../types/transaction";
 
 export interface RegistrosFilters {

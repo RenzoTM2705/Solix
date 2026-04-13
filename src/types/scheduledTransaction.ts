@@ -1,3 +1,4 @@
+// Tipos base para los gastos programados.
 export interface ScheduledTransaction {
     id: string;
     user_id: string;

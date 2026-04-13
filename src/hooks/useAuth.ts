@@ -1,3 +1,4 @@
+// Hook central de autenticacion: expone estado de usuario, login, registro y logout.
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "../services/supabase";
