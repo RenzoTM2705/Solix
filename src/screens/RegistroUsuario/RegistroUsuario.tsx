@@ -144,34 +144,6 @@ export const RegistroUsuario = () => {
                                 </span>
                             </button>
 
-                            <div className="flex items-center gap-4">
-                                <div className="h-px flex-1 bg-[#c3c6d64c]" />
-                                <span className="[font-family:'Inter-Regular',Helvetica] text-xs font-normal tracking-[1.2px] text-[#737685]">
-                                    O REGÍSTRATE CON
-                                </span>
-                                <div className="h-px flex-1 bg-[#c3c6d64c]" />
-                            </div>
-
-                            <div className="grid w-full grid-cols-2 gap-4">
-                                <button
-                                    type="button"
-                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-solid border-[#c3c6d633] bg-[#eaedff] px-4 py-3"
-                                >
-                                    <div className="h-5 w-5 bg-[url(/google.png)] bg-cover bg-center" />
-                                    <span className="[font-family:'Inter-SemiBold',Helvetica] text-sm font-semibold leading-5 text-[#131b2e]">
-                                        Google
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-solid border-[#c3c6d633] bg-[#eaedff] px-4 py-3"
-                                >
-                                    <span className="[font-family:'Inter-SemiBold',Helvetica] text-sm font-semibold leading-5 text-[#131b2e]">
-                                        Apple
-                                    </span>
-                                </button>
-                            </div>
-
                             <div className="flex items-center justify-center gap-1 pt-1 text-center">
                                 <span className="[font-family:'Inter-Regular',Helvetica] text-base font-normal leading-6 text-[#434654]">
                                     ¿Ya tienes una cuenta?
@@ -185,10 +157,6 @@ export const RegistroUsuario = () => {
                             </div>
                         </div>
                     </form>
-
-                    <div className="w-full text-center [font-family:'Inter-Regular',Helvetica] text-xs font-normal leading-4 text-[#73768599]">
-                        © 2024 Solix Finance. Secure & Ethereal.
-                    </div>
                 </div>
             </div>
         </div>
