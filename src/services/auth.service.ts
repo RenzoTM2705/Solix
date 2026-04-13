@@ -40,13 +40,18 @@ export const getAuthErrorMessage = (error: unknown) => {
     return "Ocurrió un error de autenticación. Inténtalo nuevamente.";
 };
 
-export const signUp = async (email: string, password: string) => {
+export const signUp = async (email: string, password: string, fullName?: string) => {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
             emailRedirectTo: getAppUrl("/"),
+            data: fullName?.trim()
+                ? {
+                    full_name: fullName.trim(),
+                }
+                : undefined,
         },
     });
 

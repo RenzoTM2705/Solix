@@ -109,8 +109,8 @@ export const useAuth = () => {
         return data;
     }, []);
 
-    const register = useCallback(async (email: string, password: string) => {
-        const data = await signUpService(email, password);
+    const register = useCallback(async (email: string, password: string, fullName?: string) => {
+        const data = await signUpService(email, password, fullName);
         updateAuthSnapshot({ user: data.user ?? null, loading: false });
         return data;
     }, []);

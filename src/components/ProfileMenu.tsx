@@ -23,6 +23,19 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
 
     const avatarUrl = profile?.avatar_url
         || (typeof user?.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : "");
+    const profileName = typeof user?.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name.trim()
+        : "";
+    const displayName = profileName || "Usuario";
+    const displayInitial = displayName.charAt(0).toUpperCase();
+    const supabaseBaseUrl = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, "") ?? "";
+    const resolvedAvatarUrl = avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")
+        ? avatarUrl
+        : avatarUrl.startsWith("/")
+            ? `${supabaseBaseUrl}${avatarUrl}`
+            : avatarUrl
+                ? `${supabaseBaseUrl}/storage/v1/object/public/${avatarUrl.replace(/^\/+/, "")}`
+                : "";
 
     useEffect(() => {
         const handleOutsideInteraction = (event: MouseEvent | TouchEvent) => {
@@ -125,9 +138,9 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
                 className="rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]"
             >
                 <div className={`${avatarClassName} overflow-hidden rounded-full border border-[rgba(0,82,204,0.14)] bg-[#eaf0ff] shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]`}>
-                    {avatarUrl ? (
+                    {resolvedAvatarUrl ? (
                         <img
-                            src={avatarUrl}
+                            src={resolvedAvatarUrl}
                             alt="Foto de perfil"
                             width={40}
                             height={40}
@@ -137,7 +150,7 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
                         />
                     ) : (
                         <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#dbeafe_0%,#bfdbfe_100%)] [font-family:'Inter-SemiBold',Helvetica] text-[14px] text-[#1d4ed8]">
-                            {user?.email?.charAt(0)?.toUpperCase() ?? "S"}
+                            {displayInitial}
                         </div>
                     )}
                 </div>
@@ -147,7 +160,7 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
                 <div className="absolute right-0 top-full z-[260] mt-3 w-60 overflow-hidden rounded-[24px] border border-[rgba(195,198,214,0.25)] bg-white shadow-[0_20px_40px_0_rgba(19,27,46,0.14)]">
                     <div className="border-b border-[rgba(195,198,214,0.22)] px-4 py-4">
                         <p className="[font-family:'Inter-SemiBold',Helvetica] text-[13px] font-semibold text-[#131b2e]">
-                            {user?.email ?? "Acceso a Solix"}
+                            {displayName}
                         </p>
                         <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[12px] text-[#6b7280]">
                             {user ? "Sesión activa" : "Ingresa para continuar"}
