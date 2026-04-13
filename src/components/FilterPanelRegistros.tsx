@@ -72,7 +72,7 @@ export const FilterPanelRegistros = ({
                     {/* FECHA */}
                     <div className="flex flex-col gap-3">
                         <label className="font-semibold text-[#131b2e] text-sm">
-                            🗓️ Fecha
+                            Fecha
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                             {(["today", "last7", "thisMonth"] as const).map((range) => (
@@ -131,7 +131,7 @@ export const FilterPanelRegistros = ({
                     {/* TIPO */}
                     <div className="flex flex-col gap-3">
                         <label className="font-semibold text-[#131b2e] text-sm">
-                            💰 Tipo
+                            Tipo
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                             {(["all", "ingreso", "gasto"] as const).map((type) => (
@@ -156,7 +156,7 @@ export const FilterPanelRegistros = ({
                     {/* MONTO */}
                     <div className="flex flex-col gap-3">
                         <label className="font-semibold text-[#131b2e] text-sm">
-                            💸 Monto
+                            Monto
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                             {(["all", "under50", "over100"] as const).map((filter) => (
