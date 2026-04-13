@@ -32,7 +32,7 @@ export const ConfigInicial = () => {
     const [isSaving, setIsSaving] = useState(false);
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { profile } = useProfile();
+    const { profile, refreshProfile } = useProfile();
 
     const handleMontoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value.replace(",", ".");
@@ -91,6 +91,8 @@ export const ConfigInicial = () => {
             } else {
                 await createProfile(user.id, monto);
             }
+
+            await refreshProfile(true);
 
             navigate("/dashboard", { replace: true });
         } catch (err) {
