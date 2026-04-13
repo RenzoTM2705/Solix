@@ -11,97 +11,118 @@ import {
     updateLastActivityTime,
 } from "../services/auth.service";
 
-export const useAuth = () => {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+type AuthSnapshot = {
+    user: User | null;
+    loading: boolean;
+};
 
-    useEffect(() => {
-        let mounted = true;
+let authSnapshot: AuthSnapshot = {
+    user: null,
+    loading: true,
+};
 
-        if (!isSupabaseConfigured || !supabase) {
-            setUser(null);
-            setLoading(false);
-            return () => {
-                mounted = false;
-            };
-        }
+let authInitialized = false;
+let authInitPromise: Promise<void> | null = null;
+let authSubscription: { unsubscribe: () => void } | null = null;
+const authListeners = new Set<(snapshot: AuthSnapshot) => void>();
 
-        const initializeAuth = async () => {
-            try {
-                // Verificar si sesión expiró por inactividad
-                const hasExpired = await checkInactivityTimeout();
-                
-                if (hasExpired) {
-                    if (mounted) {
-                        setUser(null);
-                    }
-                    return;
-                }
+const emitAuthSnapshot = () => {
+    authListeners.forEach((listener) => listener(authSnapshot));
+};
 
-                // Verificar si no marcó "Recordar sesión" y ya pasó tiempo
-                const rememberMe = localStorage.getItem('solix.rememberMe');
-                if (rememberMe === 'false' && sessionStorage.getItem('supabase.temp.token') === null) {
-                    // Sesión temporal expiró (pestaña cerrada)
-                    await signOutService();
-                    if (mounted) {
-                        setUser(null);
-                    }
-                    return;
-                }
+const updateAuthSnapshot = (next: Partial<AuthSnapshot>) => {
+    authSnapshot = {
+        ...authSnapshot,
+        ...next,
+    };
+    emitAuthSnapshot();
+};
 
-                const currentUser = await getCurrentUser();
-                if (mounted) {
-                    setUser(currentUser);
-                    if (currentUser) {
-                        updateLastActivityTime();
-                    }
-                }
-            } catch {
-                if (mounted) {
-                    setUser(null);
-                }
-            } finally {
-                if (mounted) {
-                    setLoading(false);
-                }
+const ensureAuthInitialization = () => {
+    if (authInitialized) {
+        return authInitPromise ?? Promise.resolve();
+    }
+
+    authInitialized = true;
+
+    if (!isSupabaseConfigured || !supabase) {
+        updateAuthSnapshot({ user: null, loading: false });
+        return Promise.resolve();
+    }
+
+    authInitPromise = (async () => {
+        try {
+            const hasExpired = await checkInactivityTimeout();
+
+            if (hasExpired) {
+                updateAuthSnapshot({ user: null, loading: false });
+                return;
             }
-        };
 
-        initializeAuth();
+            const rememberMe = localStorage.getItem("solix.rememberMe");
+            if (rememberMe === "false" && sessionStorage.getItem("supabase.temp.token") === null) {
+                await signOutService();
+                updateAuthSnapshot({ user: null, loading: false });
+                return;
+            }
 
+            const currentUser = await getCurrentUser();
+            if (currentUser) {
+                updateLastActivityTime();
+            }
+
+            updateAuthSnapshot({ user: currentUser, loading: false });
+        } catch {
+            updateAuthSnapshot({ user: null, loading: false });
+        }
+    })();
+
+    if (!authSubscription) {
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-            setLoading(false);
+            updateAuthSnapshot({ user: session?.user ?? null, loading: false });
         });
 
+        authSubscription = subscription;
+    }
+
+    return authInitPromise;
+};
+
+export const useAuth = () => {
+    const [snapshot, setSnapshot] = useState<AuthSnapshot>(authSnapshot);
+
+    useEffect(() => {
+        authListeners.add(setSnapshot);
+        setSnapshot(authSnapshot);
+        void ensureAuthInitialization();
+
         return () => {
-            mounted = false;
-            subscription.unsubscribe();
+            authListeners.delete(setSnapshot);
         };
     }, []);
 
     const login = useCallback(async (email: string, password: string, rememberMe: boolean = true) => {
         const data = await signInService(email, password, rememberMe);
-        setUser(data.user ?? null);
+        updateAuthSnapshot({ user: data.user ?? null, loading: false });
         return data;
     }, []);
 
     const register = useCallback(async (email: string, password: string) => {
         const data = await signUpService(email, password);
-        setUser(data.user ?? null);
+        updateAuthSnapshot({ user: data.user ?? null, loading: false });
         return data;
     }, []);
 
     const logout = useCallback(async () => {
         await signOutService();
-        setUser(null);
+        updateAuthSnapshot({ user: null, loading: false });
     }, []);
 
     return {
-        user,
-        loading,
+        user: snapshot.user,
+        loading: snapshot.loading,
         login,
         register,
         logout,

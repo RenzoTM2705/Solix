@@ -1,33 +1,30 @@
 // Define las rutas públicas y protegidas de Solix.
 import { Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
 import { useInactivityTimeout } from "../hooks/useInactivityTimeout";
-import { ConfigInicial } from "../screens/ConfigInicial";
-import { CambiarClave } from "../screens/CambiarClave";
-import { ConfirmacionClave } from "../screens/ConfirmacionClave";
-import { Dashboard } from "../screens/Dashboard";
-import { GastosProgramados } from "../screens/GastosProgramados";
-import { Login } from "../screens/Login";
-import { RecuperarClave } from "../screens/RecuperarClave";
-import { RegistroUsuario } from "../screens/RegistroUsuario";
-import { Registros } from "../screens/Registros";
+
+const ConfigInicial = lazy(() => import("../screens/ConfigInicial").then((m) => ({ default: m.ConfigInicial })));
+const CambiarClave = lazy(() => import("../screens/CambiarClave").then((m) => ({ default: m.CambiarClave })));
+const ConfirmacionClave = lazy(() => import("../screens/ConfirmacionClave").then((m) => ({ default: m.ConfirmacionClave })));
+const Dashboard = lazy(() => import("../screens/Dashboard").then((m) => ({ default: m.Dashboard })));
+const GastosProgramados = lazy(() => import("../screens/GastosProgramados").then((m) => ({ default: m.GastosProgramados })));
+const Login = lazy(() => import("../screens/Login").then((m) => ({ default: m.Login })));
+const RecuperarClave = lazy(() => import("../screens/RecuperarClave").then((m) => ({ default: m.RecuperarClave })));
+const RegistroUsuario = lazy(() => import("../screens/RegistroUsuario").then((m) => ({ default: m.RegistroUsuario })));
+const Registros = lazy(() => import("../screens/Registros").then((m) => ({ default: m.Registros })));
 
 const RequireConfiguredAuth = ({ children }: { children: React.ReactElement }) => {
     const { user, loading: authLoading } = useAuth();
-    const { profile, loading: profileLoading } = useProfile();
     useInactivityTimeout();
 
-    if (authLoading || profileLoading) {
+    if (authLoading) {
         return <div className="min-h-screen w-full bg-[#faf8ff]" />;
     }
 
     if (!user) {
         return <Navigate to="/" replace />;
-    }
-
-    if (!profile || !profile.is_configured) {
-        return <Navigate to="/config-inicial" replace />;
     }
 
     return children;
@@ -73,74 +70,76 @@ const RedirectIfAuth = ({ children }: { children: React.ReactElement }) => {
 };
 
 export const AppRoutes = () => (
-    <Routes>
-        <Route
-            path="/"
-            element={(
-                <RedirectIfAuth>
-                    <Login />
-                </RedirectIfAuth>
-            )}
-        />
-        <Route
-            path="/registro-usuario"
-            element={(
-                <RedirectIfAuth>
-                    <RegistroUsuario />
-                </RedirectIfAuth>
-            )}
-        />
-        <Route
-            path="/recuperar-clave"
-            element={(
-                <RedirectIfAuth>
-                    <RecuperarClave />
-                </RedirectIfAuth>
-            )}
-        />
-        <Route
-            path="/confirmacion-clave"
-            element={(
-                <RedirectIfAuth>
-                    <ConfirmacionClave />
-                </RedirectIfAuth>
-            )}
-        />
-        <Route
-            path="/cambiar-clave"
-            element={<CambiarClave />}
-        />
-        <Route
-            path="/config-inicial"
-            element={(
-                <RequireAuthForSetup>
-                    <ConfigInicial />
-                </RequireAuthForSetup>
-            )}
-        />
-        <Route
-            path="/dashboard"
-            element={(
-                <RequireConfiguredAuth>
-                    <Dashboard />
-                </RequireConfiguredAuth>
-            )}
-        />
-        <Route
-            path="/registros"
-            element={(
-                <RequireConfiguredAuth>
-                    <Registros />
-                </RequireConfiguredAuth>
-            )}
-        />
-        <Route
-            path="/gastos-programados"
-            element={(
-                <RequireConfiguredAuth>
-                    <GastosProgramados />
-                </RequireConfiguredAuth>
-            )}
-        />
-    </Routes>
+    <Suspense fallback={<div className="min-h-screen w-full bg-[#faf8ff]" />}>
+        <Routes>
+            <Route
+                path="/"
+                element={(
+                    <RedirectIfAuth>
+                        <Login />
+                    </RedirectIfAuth>
+                )}
+            />
+            <Route
+                path="/registro-usuario"
+                element={(
+                    <RedirectIfAuth>
+                        <RegistroUsuario />
+                    </RedirectIfAuth>
+                )}
+            />
+            <Route
+                path="/recuperar-clave"
+                element={(
+                    <RedirectIfAuth>
+                        <RecuperarClave />
+                    </RedirectIfAuth>
+                )}
+            />
+            <Route
+                path="/confirmacion-clave"
+                element={(
+                    <RedirectIfAuth>
+                        <ConfirmacionClave />
+                    </RedirectIfAuth>
+                )}
+            />
+            <Route
+                path="/cambiar-clave"
+                element={<CambiarClave />}
+            />
+            <Route
+                path="/config-inicial"
+                element={(
+                    <RequireAuthForSetup>
+                        <ConfigInicial />
+                    </RequireAuthForSetup>
+                )}
+            />
+            <Route
+                path="/dashboard"
+                element={(
+                    <RequireConfiguredAuth>
+                        <Dashboard />
+                    </RequireConfiguredAuth>
+                )}
+            />
+            <Route
+                path="/registros"
+                element={(
+                    <RequireConfiguredAuth>
+                        <Registros />
+                    </RequireConfiguredAuth>
+                )}
+            />
+            <Route
+                path="/gastos-programados"
+                element={(
+                    <RequireConfiguredAuth>
+                        <GastosProgramados />
+                    </RequireConfiguredAuth>
+                )}
+            />
+        </Routes>
+    </Suspense>
 );

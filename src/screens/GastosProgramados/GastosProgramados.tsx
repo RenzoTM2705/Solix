@@ -8,7 +8,6 @@ import type { ScheduledTransaction } from "../../types/scheduledTransaction";
 import { useEffect, useMemo, useState } from "react";
 import type { GastosFilters } from "../../utils/gastosFilters";
 import { INITIAL_GASTOS_FILTERS, filterScheduledTransactions } from "../../utils/gastosFilters";
-import { generatePDF } from "../../utils/pdfExport";
 
 const formatCurrency = (value: number, withSign = false) => {
     const abs = Math.abs(value).toLocaleString("en-US", {
@@ -424,7 +423,7 @@ export const GastosProgramados = () => {
     };
 
     // Exporta el listado filtrado de gastos programados a PDF.
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
         if (filteredData.length === 0) {
             alert("No hay gastos programados para exportar con los filtros aplicados.");
             return;
@@ -446,6 +445,7 @@ export const GastosProgramados = () => {
             estado_display: item.estado === "pagado" ? "Pagado" : "Pendiente",
         }));
 
+        const { generatePDF } = await import("../../utils/pdfExport");
         generatePDF("Reporte de Gastos Programados", columns, rows, "reporte-gastos-programados");
     };
 
@@ -617,9 +617,9 @@ export const GastosProgramados = () => {
                                     onClick={() => setShowFilterPanel(!showFilterPanel)}
                                     className="flex gap-[8px] items-center shrink-0 flex-nowrap cursor-pointer hover:opacity-70 transition-opacity"
                                 >
-                                    <div className="flex w-[10.5px] flex-col items-center shrink-0 flex-nowrap">
-                                        <div className="w-[10.5px] h-[7px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/VJYcxW5iNX.png)] bg-cover bg-no-repeat" />
-                                    </div>
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#434654]">
+                                        <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                    </svg>
                                     <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] text-center whitespace-nowrap">
                                         Filtrar
                                     </span>
@@ -629,9 +629,10 @@ export const GastosProgramados = () => {
                                     onClick={handleExportPDF}
                                     className="flex gap-[8px] items-center shrink-0 flex-nowrap relative z-[98] cursor-pointer hover:opacity-70 transition-opacity"
                                 >
-                                    <div className="flex w-[9.333px] flex-col items-center shrink-0 flex-nowrap relative z-[99]">
-                                        <div className="w-[9.333px] h-[9.333px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/rGTigOR2Nd.png)] bg-cover bg-no-repeat relative z-[100]" />
-                                    </div>
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#434654]">
+                                        <path d="M12 4v10m0 0 4-4m-4 4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M5 19h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                    </svg>
                                     <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] relative text-center whitespace-nowrap z-[101]">
                                         Exportar
                                     </span>
@@ -737,9 +738,7 @@ export const GastosProgramados = () => {
                                     disabled={currentPage === 1}
                                     className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[183] hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    <div className="flex w-[7.4px] flex-col items-center shrink-0 flex-nowrap relative z-[184]">
-                                        <div className="w-[7.4px] h-[12px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/ySHF1wAAtB.png)] bg-cover bg-no-repeat relative z-[185]" />
-                                    </div>
+                                    <span className="text-[18px] leading-none text-[#434654]">&lsaquo;</span>
                                 </button>
                                 {pageNumbers.map((pageNumber) => {
                                     const isActive = pageNumber === currentPage;
@@ -769,9 +768,7 @@ export const GastosProgramados = () => {
                                     disabled={currentPage === totalPages}
                                     className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[192] hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    <div className="flex w-[7.4px] flex-col items-center shrink-0 flex-nowrap relative z-[193]">
-                                        <div className="w-[7.4px] h-[12px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/1RJYiJee7R.png)] bg-cover bg-no-repeat relative z-[194]" />
-                                    </div>
+                                    <span className="text-[18px] leading-none text-[#434654]">&rsaquo;</span>
                                 </button>
                             </div>
                         </div>

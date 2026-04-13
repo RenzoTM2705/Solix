@@ -4,12 +4,37 @@ import { useAuth } from "./useAuth";
 import { getProfile } from "../services/profile.service";
 import type { Profile } from "../types/profile";
 
+const profileCache = new Map<string, Profile | null>();
+const profileInFlight = new Map<string, Promise<Profile | null>>();
+
+const fetchProfileCached = (userId: string, force = false) => {
+    if (!force && profileCache.has(userId)) {
+        return Promise.resolve(profileCache.get(userId) ?? null);
+    }
+
+    if (!force && profileInFlight.has(userId)) {
+        return profileInFlight.get(userId) as Promise<Profile | null>;
+    }
+
+    const request = getProfile(userId)
+        .then((nextProfile) => {
+            profileCache.set(userId, nextProfile);
+            return nextProfile;
+        })
+        .finally(() => {
+            profileInFlight.delete(userId);
+        });
+
+    profileInFlight.set(userId, request);
+    return request;
+};
+
 export const useProfile = () => {
     const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const refreshProfile = useCallback(async () => {
+    const refreshProfile = useCallback(async (force = false) => {
         if (authLoading) {
             setLoading(true);
             return;
@@ -23,7 +48,7 @@ export const useProfile = () => {
 
         setLoading(true);
         try {
-            const nextProfile = await getProfile(user.id);
+            const nextProfile = await fetchProfileCached(user.id, force);
             setProfile(nextProfile);
         } finally {
             setLoading(false);

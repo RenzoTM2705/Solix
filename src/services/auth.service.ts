@@ -99,7 +99,11 @@ export const updateUserAvatar = async (userId: string, file: File) => {
 
     const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file, { upsert: true, contentType: file.type });
+        .upload(filePath, file, {
+            upsert: true,
+            contentType: file.type,
+            cacheControl: "31536000",
+        });
 
     if (uploadError) {
         throw uploadError;
