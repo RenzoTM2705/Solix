@@ -179,7 +179,7 @@ export const Dashboard = () => {
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                             <div className="min-w-0">
                                 <h1 className="[font-family:'Manrope-Bold',Helvetica] text-[28px] font-bold leading-[34px] text-[#131b2e] sm:text-[34px] sm:leading-[40px]">
-                                    Resumen Ejecutivo
+                                    Resumen de Gastos
                                 </h1>
                                 <p className="mt-1 [font-family:'Inter-Regular',Helvetica] text-[16px] leading-6 text-[#434654]">
                                     Flujo de capital en tiempo real y evaluación de riesgos.
@@ -192,10 +192,6 @@ export const Dashboard = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-[20px] border border-[rgba(0,61,155,0.15)] bg-[rgba(0,61,155,0.04)] px-4 py-3 text-[13px] leading-5 text-[#1d4ed8]">
-                            Mostrando ingresos, gastos instantáneos y pagos programados en un mismo resumen.
-                        </div>
-
                         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:items-start">
                             <div className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                                 <div className="flex items-start gap-2 min-w-0">
@@ -203,7 +199,7 @@ export const Dashboard = () => {
                                         <path d="M4 18h16M7 14l3-3 3 2 4-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
                                     <span className="block min-w-0 [font-family:'Manrope-Bold',Helvetica] text-[20px] sm:text-[20px] font-bold leading-7 sm:leading-7 text-[#131b2e] break-words">
-                                        Auditoría de Salud Financiera
+                                        Salud Financiera
                                     </span>
                                 </div>
 
@@ -213,7 +209,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Capital inicial
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
                                                 Saldo al inicio del periodo
                                             </p>
                                         </div>
@@ -227,7 +223,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Ingresos instantáneos
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
                                                 Movimientos registrados al momento
                                             </p>
                                         </div>
@@ -244,7 +240,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Gastos instantáneos
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
                                                 Salidas registradas al momento
                                             </p>
                                         </div>
@@ -261,7 +257,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Por pagar programado
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
                                                 Pagos pendientes futuros
                                             </p>
                                         </div>
@@ -278,7 +274,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Programado pagado
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#94a3b8]">
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
                                                 Pagos programados ya completados
                                             </p>
                                         </div>
