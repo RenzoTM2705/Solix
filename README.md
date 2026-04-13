@@ -1,6 +1,6 @@
 # Solix
 
-Solix es una aplicación web de gestión financiera personal construida con React, TypeScript, Vite, TailwindCSS y Supabase. La app está enfocada en control de capital inicial, registros de ingresos y gastos, gastos programados, autenticación de usuarios y recuperación de contraseña.
+Solix es una aplicación web de gestión financiera personal construida con React, TypeScript, Vite, TailwindCSS y Supabase. La app está enfocada en control de capital inicial, registros de ingresos y gastos y gastos programados
 
 ## Qué hace la app
 
