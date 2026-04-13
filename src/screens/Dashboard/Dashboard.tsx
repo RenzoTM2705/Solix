@@ -12,10 +12,6 @@ export const Dashboard = () => {
     const { data: scheduledData, loading: scheduledLoading } = useScheduledTransactions();
     const { profile, loading: profileLoading } = useProfile();
 
-    if (!profileLoading && (!profile || !profile.is_configured)) {
-        return <Navigate to="/config-inicial" replace />;
-    }
-
     const formatCurrency = (amount: number, withSign = false) => {
         const value = Math.abs(amount).toLocaleString("en-US", {
             minimumFractionDigits: 2,
@@ -160,6 +156,10 @@ export const Dashboard = () => {
             financialHealth,
         };
     }, [data, scheduledData, profile?.monto_inicial]);
+
+    if (!profileLoading && (!profile || !profile.is_configured)) {
+        return <Navigate to="/config-inicial" replace />;
+    }
 
     return (
         <div className="main-container relative flex w-full min-h-screen pt-0 pr-0 pb-0 pl-0 flex-col items-start flex-nowrap bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
