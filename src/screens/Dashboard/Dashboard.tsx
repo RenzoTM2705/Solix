@@ -5,11 +5,16 @@ import { useTransactions } from "../../hooks/useTransactions";
 import { useProfile } from "../../hooks/useProfile";
 import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { useMemo } from "react";
+import { Navigate } from "react-router-dom";
 
 export const Dashboard = () => {
     const { data, loading } = useTransactions();
     const { data: scheduledData, loading: scheduledLoading } = useScheduledTransactions();
-    const { profile } = useProfile();
+    const { profile, loading: profileLoading } = useProfile();
+
+    if (!profileLoading && (!profile || !profile.is_configured)) {
+        return <Navigate to="/config-inicial" replace />;
+    }
 
     const formatCurrency = (amount: number, withSign = false) => {
         const value = Math.abs(amount).toLocaleString("en-US", {
@@ -166,7 +171,7 @@ export const Dashboard = () => {
 
                     <section className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                         {(loading || scheduledLoading) && (
-                            <div className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#434654]">
+                            <div className="h-6 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#434654]">
                                 Cargando...
                             </div>
                         )}
@@ -191,10 +196,12 @@ export const Dashboard = () => {
                             Mostrando ingresos, gastos instantáneos y pagos programados en un mismo resumen.
                         </div>
 
-                        <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+                        <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:items-start">
                             <div className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                                 <div className="flex items-start gap-2 min-w-0">
-                                    <div className="h-[18px] w-[18px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/AEGAVWW9Xx.png)] bg-cover bg-no-repeat" />
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="mt-[2px] h-[18px] w-[18px] text-[#003d9b]">
+                                        <path d="M4 18h16M7 14l3-3 3 2 4-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
                                     <span className="block min-w-0 [font-family:'Manrope-Bold',Helvetica] text-[20px] sm:text-[20px] font-bold leading-7 sm:leading-7 text-[#131b2e] break-words">
                                         Auditoría de Salud Financiera
                                     </span>
@@ -323,7 +330,7 @@ export const Dashboard = () => {
                                     </span>
                                 </div>
 
-                                <div className="mt-8 flex flex-col items-center justify-center gap-6 rounded-[32px] bg-[#f8faff] p-4 sm:p-6 md:flex-row md:items-center md:justify-start md:gap-8 lg:gap-10 lg:p-8 overflow-hidden">
+                                <div className="mt-8 flex min-h-[248px] flex-col items-center justify-center gap-6 rounded-[32px] bg-[#f8faff] p-4 sm:p-6 md:flex-row md:items-center md:justify-start md:gap-8 lg:gap-10 lg:p-8 overflow-hidden">
                                     <div className="relative flex h-40 w-40 shrink-0 items-center justify-center sm:h-48 sm:w-48">
                                         <div className="absolute inset-0 rounded-full" style={{ background: chartGradient }} />
                                         <div className="absolute inset-5 rounded-full bg-[#faf8ff]" />
@@ -360,7 +367,9 @@ export const Dashboard = () => {
 
                                 <div className="mt-8 space-y-4 rounded-[32px] bg-[#f2f3ff] p-5 border border-[rgba(255,255,255,0.5)]">
                                     <div className="flex items-center gap-2">
-                                        <div className="h-[7px] w-[11.667px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/sEtP0HEFDG.png)] bg-cover bg-no-repeat" />
+                                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#006c49]">
+                                            <path d="M4 12h16M12 4l8 8-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
                                         <span className="[font-family:'Inter-SemiBold',Helvetica] text-[10px] font-bold uppercase tracking-[1px] text-[#006c49]">
                                             Balance operativo
                                         </span>
@@ -375,7 +384,9 @@ export const Dashboard = () => {
 
                                 <div className="mt-4 space-y-4 rounded-[32px] bg-[#f2f3ff] p-5 border border-[rgba(255,255,255,0.5)]">
                                     <div className="flex items-center gap-2">
-                                        <div className="h-[11.667px] w-[9.333px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/cR2vHwC5ha.png)] bg-cover bg-no-repeat" />
+                                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#ba1a1a]">
+                                            <path d="M20 12H4m8-8-8 8 8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
                                         <span className="[font-family:'Inter-SemiBold',Helvetica] text-[10px] font-bold uppercase tracking-[1px] text-[#ba1a1a]">
                                             Carga de gastos
                                         </span>

@@ -10,13 +10,38 @@ import {
 import type { CreateTransactionInput, Transaction, UpdateTransactionInput } from "../types/transaction";
 import { getAuthErrorMessage } from "../services/auth.service";
 
+const transactionsCache = new Map<string, Transaction[]>();
+const transactionsInFlight = new Map<string, Promise<Transaction[]>>();
+
+const fetchTransactionsCached = (userId: string, force = false) => {
+    if (!force && transactionsCache.has(userId)) {
+        return Promise.resolve(transactionsCache.get(userId) ?? []);
+    }
+
+    if (!force && transactionsInFlight.has(userId)) {
+        return transactionsInFlight.get(userId) as Promise<Transaction[]>;
+    }
+
+    const request = getTransactions(userId)
+        .then((transactions) => {
+            transactionsCache.set(userId, transactions);
+            return transactions;
+        })
+        .finally(() => {
+            transactionsInFlight.delete(userId);
+        });
+
+    transactionsInFlight.set(userId, request);
+    return request;
+};
+
 export const useTransactions = () => {
     const { user } = useAuth();
     const [data, setData] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const refreshTransactions = useCallback(async () => {
+    const refreshTransactions = useCallback(async (force = false) => {
         if (!user?.id) {
             setData([]);
             setLoading(false);
@@ -27,7 +52,7 @@ export const useTransactions = () => {
         setError(null);
 
         try {
-            const transactions = await getTransactions(user.id);
+            const transactions = await fetchTransactionsCached(user.id, force);
             setData(transactions);
         } catch (err) {
             setError(getAuthErrorMessage(err));
@@ -47,7 +72,11 @@ export const useTransactions = () => {
                 user_id: user.id,
             });
 
-            setData((prev) => [created, ...prev]);
+            setData((prev) => {
+                const next = [created, ...prev];
+                transactionsCache.set(user.id, next);
+                return next;
+            });
             return created;
         },
         [user?.id],
@@ -60,7 +89,11 @@ export const useTransactions = () => {
             }
 
             const updated = await updateTransactionService(id, user.id, payload);
-            setData((prev) => prev.map((item) => (item.id === id ? updated : item)));
+            setData((prev) => {
+                const next = prev.map((item) => (item.id === id ? updated : item));
+                transactionsCache.set(user.id, next);
+                return next;
+            });
             return updated;
         },
         [user?.id],
@@ -73,7 +106,11 @@ export const useTransactions = () => {
             }
 
             await deleteTransactionService(id, user.id);
-            setData((prev) => prev.filter((item) => item.id !== id));
+            setData((prev) => {
+                const next = prev.filter((item) => item.id !== id);
+                transactionsCache.set(user.id, next);
+                return next;
+            });
         },
         [user?.id],
     );

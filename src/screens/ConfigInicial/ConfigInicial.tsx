@@ -87,7 +87,7 @@ export const ConfigInicial = () => {
             <div className="flex w-full px-4 md:px-8 py-4 justify-between items-center bg-[rgba(250,248,255,0.8)] relative z-[45]">
                 <div className="flex gap-[12px] items-center shrink-0 flex-nowrap relative z-[46]">
                     <div className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap relative z-[47]">
-                        <div className="self-stretch grow shrink-0 basis-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/xak7dXXxwW.png)] bg-cover bg-no-repeat relative overflow-hidden z-[48]" />
+                        <img src="/Solix%20logo.webp" alt="Solix" className="self-stretch grow shrink-0 basis-0 rounded-full object-cover relative overflow-hidden z-[48]" width={40} height={40} />
                     </div>
                     <div className="flex flex-col items-start shrink-0 flex-nowrap relative z-[49]">
                         <span className="h-[32px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] font-bold text-[24px] leading-[32px] text-[#003d9b] tracking-[-0.6px] relative text-left whitespace-nowrap z-50">
@@ -104,7 +104,9 @@ export const ConfigInicial = () => {
                     </div>
                     <div className="flex w-[32px] pt-[8px] pr-[8px] pb-[8px] pl-[8px] flex-col justify-center items-center shrink-0 flex-nowrap rounded-full relative z-[54]">
                         <div className="flex w-[16px] justify-center items-start shrink-0 flex-nowrap relative z-[55]">
-                            <div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/EBD9qkw9Yx.png)] bg-cover bg-no-repeat relative z-[56]" />
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[20px] w-[16px] text-[#434654]">
+                                <path d="M12 3v18M4 11l8-8 8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
                         </div>
                     </div>
                 </div>
@@ -117,7 +119,7 @@ export const ConfigInicial = () => {
                         <div className="flex justify-center items-start self-stretch shrink-0 flex-nowrap relative z-[6]">
                             <div className="flex w-[80px] h-[80px] justify-center items-center shrink-0 flex-nowrap bg-[#e2e7ff] rounded-full relative z-[7]">
                                 <div className="flex w-[30px] flex-col items-center shrink-0 flex-nowrap relative z-[8]">
-                                    <div className="w-[30px] h-[28.5px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/5JcrSBranv.png)] bg-cover bg-no-repeat relative z-[9]" />
+                                    <img src="/Solix%20logo.webp" alt="Solix" className="h-[28.5px] w-[30px] rounded-[8px] object-cover" width={30} height={29} />
                                 </div>
                             </div>
                         </div>
@@ -168,19 +170,27 @@ export const ConfigInicial = () => {
                             </div>
                             <div className="pt-[16px] pr-0 pb-[24px] pl-0 self-stretch shrink-0 relative z-[24] flex flex-col sm:flex-row gap-3 justify-center">
                                 <div className="flex pt-[16px] pr-[16px] pb-[16px] pl-[16px] flex-col gap-[8px] items-center flex-nowrap bg-[rgba(234,237,255,0.3)] rounded-[32px] relative z-[25]">
-                                    <div className="w-[16px] h-[20px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/DO8T9Ni3uF.png)] bg-cover bg-no-repeat relative z-[26]" />
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[20px] w-[16px] text-[#434654]">
+                                        <path d="M12 3 5 6v6c0 4.4 2.9 8.3 7 9.6 4.1-1.3 7-5.2 7-9.6V6l-7-3Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
                                     <span className="flex w-[91.25px] h-[16px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold leading-[16px] text-[#434654] relative text-center whitespace-nowrap z-[27]">
                                         Seguridad Total
                                     </span>
                                 </div>
                                 <div className="flex pt-[16px] pr-[16px] pb-[16px] pl-[16px] flex-col gap-[8px] items-center flex-nowrap bg-[rgba(234,237,255,0.3)] rounded-[32px] relative z-[28]">
-                                    <div className="w-[18px] h-[18px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/vwT64HCRTg.png)] bg-cover bg-no-repeat relative z-[29]" />
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[18px] w-[18px] text-[#434654]">
+                                        <path d="M4 12h16M12 4v16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
+                                    </svg>
                                     <span className="flex w-[86.03px] h-[16px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold leading-[16px] text-[#434654] relative text-center whitespace-nowrap z-30">
                                         Sincronización
                                     </span>
                                 </div>
                                 <div className="flex pt-[16px] pr-[16px] pb-[16px] pl-[16px] flex-col gap-[8px] items-center flex-nowrap bg-[rgba(234,237,255,0.3)] rounded-[32px] relative z-[31]">
-                                    <div className="w-[18px] h-[18px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/OZmHiZxmAX.png)] bg-cover bg-no-repeat relative z-[32]" />
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[18px] w-[18px] text-[#434654]">
+                                        <path d="M4 5h16v14H4z" stroke="currentColor" strokeWidth="1.8" />
+                                        <path d="M8 9h8M8 13h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                    </svg>
                                     <span className="flex w-[92.66px] h-[16px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold leading-[16px] text-[#434654] relative text-center whitespace-nowrap z-[33]">
                                         Reportes Claros
                                     </span>
@@ -203,14 +213,16 @@ export const ConfigInicial = () => {
                                     </span>
                                 </div>
                                 <div className="flex w-[16px] flex-col items-center shrink-0 flex-nowrap relative z-[37]">
-                                    <div className="w-[16px] h-[16px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/djbCppa0G8.png)] bg-cover bg-no-repeat relative z-[38]" />
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[16px] w-[16px] text-white">
+                                        <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
                                 </div>
                             </button>
                         </div>
                     </div>
                     <div className="flex gap-[7.99px] justify-center items-center self-stretch shrink-0 flex-nowrap relative z-[39] px-2">
                         <div className="flex w-[11.667px] flex-col items-start shrink-0 flex-nowrap relative z-40">
-                            <div className="w-[11.667px] h-[11.667px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/pqd5MXEfMC.png)] bg-cover bg-no-repeat relative z-[41]" />
+                            <div className="h-[11.667px] w-[11.667px] shrink-0 rounded-full bg-[#003d9b]" />
                         </div>
                         <div className="flex flex-col items-start shrink-0 flex-nowrap relative z-[42]">
                             <span className="h-[20px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[rgba(67,70,84,0.6)] relative text-left whitespace-nowrap z-[43]">
@@ -221,7 +233,7 @@ export const ConfigInicial = () => {
                 </div>
                 <div className="w-[420px] h-[420px] md:w-[600px] md:h-[600px] shrink-0 bg-[rgba(218,226,255,0.2)] rounded-full absolute top-[-210px] md:top-[-300px] right-[-120px] z-[1]" />
             </div>
-            <div className="h-[4px] bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/6ovZ3jptoq.png)] bg-cover bg-no-repeat absolute bottom-0 left-0 right-0 z-[44]" />
+            <div className="absolute bottom-0 left-0 right-0 z-[44] h-[4px] bg-gradient-to-r from-[#003d9b] via-[#0052cc] to-[#6cf8bb]" />
         </div>
     );
 }

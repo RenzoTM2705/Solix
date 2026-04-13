@@ -12,6 +12,31 @@ import type {
     UpdateScheduledTransactionInput,
 } from "../types/scheduledTransaction";
 
+const scheduledCache = new Map<string, ScheduledTransaction[]>();
+const scheduledInFlight = new Map<string, Promise<ScheduledTransaction[]>>();
+
+const fetchScheduledCached = (userId: string, force = false) => {
+    if (!force && scheduledCache.has(userId)) {
+        return Promise.resolve(scheduledCache.get(userId) ?? []);
+    }
+
+    if (!force && scheduledInFlight.has(userId)) {
+        return scheduledInFlight.get(userId) as Promise<ScheduledTransaction[]>;
+    }
+
+    const request = getScheduledTransactions(userId)
+        .then((transactions) => {
+            scheduledCache.set(userId, transactions);
+            return transactions;
+        })
+        .finally(() => {
+            scheduledInFlight.delete(userId);
+        });
+
+    scheduledInFlight.set(userId, request);
+    return request;
+};
+
 export type AddScheduledTransactionInput = {
     descripcion: string;
     monto: number;
@@ -44,7 +69,7 @@ export const useScheduledTransactions = () => {
         return `No se pudieron cargar los gastos programados. ${message || "Inténtalo nuevamente."}`;
     };
 
-    const refreshScheduledTransactions = useCallback(async () => {
+    const refreshScheduledTransactions = useCallback(async (force = false) => {
         if (authLoading) {
             setLoading(true);
             return;
@@ -61,7 +86,7 @@ export const useScheduledTransactions = () => {
         setError(null);
 
         try {
-            const transactions = await getScheduledTransactions(user.id);
+            const transactions = await fetchScheduledCached(user.id, force);
             setData(transactions);
         } catch (err) {
             setError(getScheduledTransactionsErrorMessage(err));
@@ -85,7 +110,11 @@ export const useScheduledTransactions = () => {
                 estado: "pendiente",
             });
 
-            setData((prev) => [created, ...prev]);
+            setData((prev) => {
+                const next = [created, ...prev];
+                scheduledCache.set(user.id, next);
+                return next;
+            });
             return created;
         },
         [user?.id],
@@ -98,7 +127,11 @@ export const useScheduledTransactions = () => {
             }
 
             const updated = await updateScheduledTransactionService(id, user.id, payload);
-            setData((prev) => prev.map((item) => (item.id === id ? updated : item)));
+            setData((prev) => {
+                const next = prev.map((item) => (item.id === id ? updated : item));
+                scheduledCache.set(user.id, next);
+                return next;
+            });
             return updated;
         },
         [user?.id],
@@ -111,7 +144,11 @@ export const useScheduledTransactions = () => {
             }
 
             await deleteScheduledTransactionService(id, user.id);
-            setData((prev) => prev.filter((item) => item.id !== id));
+            setData((prev) => {
+                const next = prev.filter((item) => item.id !== id);
+                scheduledCache.set(user.id, next);
+                return next;
+            });
         },
         [user?.id],
     );

@@ -126,9 +126,19 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
             >
                 <div className={`${avatarClassName} overflow-hidden rounded-full border border-[rgba(0,82,204,0.14)] bg-[#eaf0ff] shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]`}>
                     {avatarUrl ? (
-                        <img src={avatarUrl} alt="Foto de perfil" className="h-full w-full object-cover" />
+                        <img
+                            src={avatarUrl}
+                            alt="Foto de perfil"
+                            width={40}
+                            height={40}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover"
+                        />
                     ) : (
-                        <div className="h-full w-full bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/GtEyW4VDxX.png)] bg-cover bg-no-repeat" />
+                        <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#dbeafe_0%,#bfdbfe_100%)] [font-family:'Inter-SemiBold',Helvetica] text-[14px] text-[#1d4ed8]">
+                            {user?.email?.charAt(0)?.toUpperCase() ?? "S"}
+                        </div>
                     )}
                 </div>
             </button>
@@ -186,10 +196,10 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
                                 onClick={handleLogout}
                                 className="flex w-full items-center gap-3 rounded-[18px] px-4 py-3 text-left text-[#434654] transition-colors hover:bg-[#f2f3ff] hover:text-[#0052cc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]"
                             >
-                                <div
-                                    className="h-[18px] w-[18px] shrink-0 bg-cover bg-no-repeat"
-                                    style={{ backgroundImage: "url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/M8JYveLffY.png)" }}
-                                />
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[18px] w-[18px] shrink-0">
+                                    <path d="M15 7V4.5A1.5 1.5 0 0 0 13.5 3h-7A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h7a1.5 1.5 0 0 0 1.5-1.5V17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                    <path d="M11 12h10M18 8l3 4-3 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
                                 <span className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[21px]">
                                     Cerrar sesión
                                 </span>
@@ -200,10 +210,10 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
                                 onClick={handleLogin}
                                 className="flex items-center gap-3 rounded-[18px] px-4 py-3 text-[#434654] transition-colors hover:bg-[#f2f3ff] hover:text-[#0052cc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0052cc]"
                             >
-                                <div
-                                    className="h-[18px] w-[18px] shrink-0 bg-cover bg-no-repeat"
-                                    style={{ backgroundImage: "url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/M8JYveLffY.png)" }}
-                                />
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[18px] w-[18px] shrink-0">
+                                    <path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h7A1.5 1.5 0 0 1 19 4.5v15a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 9 19.5V17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                    <path d="M13 12H3m7-4-3 4 3 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
                                 <span className="[font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[21px]">
                                     Iniciar sesión
                                 </span>
