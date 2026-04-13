@@ -5,6 +5,29 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
+type AuthStorageMode = "local" | "session";
+
+let authStorageMode: AuthStorageMode = "local";
+
+export const setAuthStorageMode = (mode: AuthStorageMode) => {
+    authStorageMode = mode;
+};
+
+const getPrimaryStorage = () => (authStorageMode === "session" ? sessionStorage : localStorage);
+const getFallbackStorage = () => (authStorageMode === "session" ? localStorage : sessionStorage);
+
+const authStorage = {
+    getItem: (key: string) => getPrimaryStorage().getItem(key) ?? getFallbackStorage().getItem(key),
+    setItem: (key: string, value: string) => {
+        getPrimaryStorage().setItem(key, value);
+        getFallbackStorage().removeItem(key);
+    },
+    removeItem: (key: string) => {
+        getPrimaryStorage().removeItem(key);
+        getFallbackStorage().removeItem(key);
+    },
+};
+
 // Singleton pattern para evitar múltiples instancias
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -20,20 +43,9 @@ export const getSupabaseClient = (): SupabaseClient => {
                 autoRefreshToken: true,
                 detectSessionInUrl: true,
                 flowType: "pkce", // Recomendado para SPA
+                storage: authStorage,
             },
         });
-
-        // Restaurar sesión temporal del sessionStorage si existe
-        const tempToken = sessionStorage.getItem('supabase.temp.token');
-        if (tempToken && !localStorage.getItem('supabase.auth.token')) {
-            try {
-                const session = JSON.parse(tempToken);
-                supabaseInstance.auth.setSession(session);
-            } catch (error) {
-                console.warn('No se pudo restaurar sesión temporal:', error);
-                sessionStorage.removeItem('supabase.temp.token');
-            }
-        }
     }
 
     return supabaseInstance;
