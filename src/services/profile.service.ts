@@ -8,7 +8,7 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
 
     const { data, error } = await supabase
         .from(TABLE_NAME)
-        .select("id, monto_inicial, is_configured")
+        .select("id, monto_inicial, is_configured, avatar_url")
         .eq("id", userId)
         .maybeSingle();
 
@@ -29,7 +29,7 @@ export const createProfile = async (userId: string, monto: number): Promise<Prof
             monto_inicial: monto,
             is_configured: true,
         })
-        .select("id, monto_inicial, is_configured")
+        .select("id, monto_inicial, is_configured, avatar_url")
         .single();
 
     if (error) {
@@ -49,7 +49,7 @@ export const updateProfile = async (userId: string, monto: number): Promise<Prof
             is_configured: true,
         })
         .eq("id", userId)
-        .select("id, monto_inicial, is_configured")
+        .select("id, monto_inicial, is_configured, avatar_url")
         .single();
 
     if (error) {
