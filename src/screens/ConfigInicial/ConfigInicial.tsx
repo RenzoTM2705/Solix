@@ -120,6 +120,16 @@ export const ConfigInicial = () => {
 
     return (
         <div className="main-container relative w-full min-h-screen bg-[#faf8ff] overflow-hidden [font-family:'Inter-Regular',Helvetica]">
+            {!isEmailVerified && (
+                <button
+                    type="button"
+                    onClick={handleBackToLogin}
+                    className="absolute left-4 top-4 z-[80] inline-flex items-center gap-2 rounded-full border border-[rgba(0,61,155,0.2)] bg-white px-4 py-2 [font-family:'Inter-SemiBold',Helvetica] text-[13px] font-semibold text-[#003d9b] shadow-[0_8px_20px_0_rgba(19,27,46,0.08)]"
+                >
+                    <span aria-hidden="true">&larr;</span>
+                    <span>Regresar al login</span>
+                </button>
+            )}
             <div className="flex w-full px-4 md:px-8 py-4 justify-between items-center bg-[rgba(250,248,255,0.8)] relative z-[45]">
                 <div className="flex gap-[12px] items-center shrink-0 flex-nowrap relative z-[46]">
                     <div className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap relative z-[47]">
@@ -180,13 +190,6 @@ export const ConfigInicial = () => {
                                 <p className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] leading-[20px] text-[#003d9b]">
                                     Enviamos un correo de verificación a {user?.email ?? "tu correo"}. Debes validarlo antes de continuar.
                                 </p>
-                                <button
-                                    type="button"
-                                    onClick={handleBackToLogin}
-                                    className="mx-auto rounded-full border border-[rgba(0,61,155,0.2)] bg-white px-4 py-2 [font-family:'Inter-SemiBold',Helvetica] text-[13px] font-semibold text-[#003d9b]"
-                                >
-                                    Regresar al login
-                                </button>
                             </div>
                         )}
                         <div className="flex pt-[24px] pr-0 pb-0 pl-0 flex-col gap-[32px] items-start self-stretch shrink-0 flex-nowrap relative z-[14]">
