@@ -31,8 +31,9 @@ export const ConfigInicial = () => {
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const { profile, refreshProfile } = useProfile();
+    const isEmailVerified = Boolean(user?.email_confirmed_at || user?.confirmed_at);
 
     const handleMontoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value.replace(",", ".");
@@ -83,6 +84,11 @@ export const ConfigInicial = () => {
             return;
         }
 
+        if (!isEmailVerified) {
+            setError("Debes validar tu correo primero para guardar el capital inicial.");
+            return;
+        }
+
         setIsSaving(true);
 
         try {
@@ -99,6 +105,16 @@ export const ConfigInicial = () => {
             setError(getProfileSaveErrorMessage(err));
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleBackToLogin = async () => {
+        try {
+            await logout();
+        } catch {
+            // Si falla logout, igual se intenta regresar al inicio.
+        } finally {
+            navigate("/", { replace: true });
         }
     };
 
@@ -159,6 +175,20 @@ export const ConfigInicial = () => {
                                 establecer tu balance base.
                             </span>
                         </div>
+                        {!isEmailVerified && (
+                            <div className="flex w-full max-w-[560px] flex-col gap-3 rounded-[20px] border border-[rgba(0,82,204,0.2)] bg-[rgba(226,231,255,0.5)] px-4 py-4 text-center">
+                                <p className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] leading-[20px] text-[#003d9b]">
+                                    Enviamos un correo de verificación a {user?.email ?? "tu correo"}. Debes validarlo antes de continuar.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={handleBackToLogin}
+                                    className="mx-auto rounded-full border border-[rgba(0,61,155,0.2)] bg-white px-4 py-2 [font-family:'Inter-SemiBold',Helvetica] text-[13px] font-semibold text-[#003d9b]"
+                                >
+                                    Regresar al login
+                                </button>
+                            </div>
+                        )}
                         <div className="flex pt-[24px] pr-0 pb-0 pl-0 flex-col gap-[32px] items-start self-stretch shrink-0 flex-nowrap relative z-[14]">
                             <div className="flex flex-col gap-[16px] items-start self-stretch shrink-0 flex-nowrap relative z-[15]">
                                 <div className="flex pt-[32px] pr-[48px] pb-[32px] pl-[48px] justify-center items-start self-stretch shrink-0 flex-nowrap bg-[#f2f3ff] rounded-[32px] relative overflow-hidden z-[16]">
@@ -243,11 +273,6 @@ export const ConfigInicial = () => {
                     <div className="flex gap-[7.99px] justify-center items-center self-stretch shrink-0 flex-nowrap relative z-[39] px-2">
                         <div className="flex w-[11.667px] flex-col items-start shrink-0 flex-nowrap relative z-40">
                             <div className="h-[11.667px] w-[11.667px] shrink-0 rounded-full bg-[#003d9b]" />
-                        </div>
-                        <div className="flex flex-col items-start shrink-0 flex-nowrap relative z-[42]">
-                            <span className="h-[20px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[rgba(67,70,84,0.6)] relative text-left whitespace-nowrap z-[43]">
-                                Podrás ajustar los movimientos individuales más tarde.
-                            </span>
                         </div>
                     </div>
                 </div>
