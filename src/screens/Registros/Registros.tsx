@@ -1,0 +1,753 @@
+// Vista de movimientos con filtros, edición y exportación.
+import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
+import { AppTopBar } from "../../components/AppTopBar";
+import { FilterPanelRegistros } from "../../components/FilterPanelRegistros";
+import { useTransactions } from "../../hooks/useTransactions";
+import { getAuthErrorMessage } from "../../services/auth.service";
+import type { Transaction, TransactionType } from "../../types/transaction";
+import { useEffect, useMemo, useState } from "react";
+import type { RegistrosFilters } from "../../utils/registrosFilters";
+import { INITIAL_REGISTROS_FILTERS, filterTransactions } from "../../utils/registrosFilters";
+import { generatePDF } from "../../utils/pdfExport";
+
+const formatCurrency = (value: number, withSign = false) => {
+    const abs = Math.abs(value).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    if (!withSign) {
+        return `S/${abs}`;
+    }
+
+    const prefix = value >= 0 ? "+" : "-";
+    return `${prefix}S/${abs}`;
+};
+
+const parseDate = (fecha: string) => {
+    const parsed = new Date(fecha);
+    if (Number.isNaN(parsed.getTime())) {
+        return { primary: fecha, year: "" };
+    }
+
+    const primary = parsed
+        .toLocaleDateString("es-PE", {
+            day: "2-digit",
+            month: "short",
+        })
+        .replace(".", "")
+        .replace(" ", " ");
+
+    return {
+        primary: `${primary},`,
+        year: String(parsed.getFullYear()),
+    };
+};
+
+const getCategoryIcon = (tipo: TransactionType) => {
+    if (tipo === "ingreso") {
+        return {
+            wrapperClass: "bg-[rgba(0,108,73,0.1)]",
+            iconUrl:
+                "https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/BxktpAcur9.png",
+            labelBg: "bg-[#6cf8bb]",
+            labelText: "text-[#00714d]",
+            amountText: "text-[#006c49]",
+        };
+    }
+
+    return {
+        wrapperClass: "bg-[rgba(186,26,26,0.1)]",
+        iconUrl:
+            "https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/BEyZymh1HQ.png",
+        labelBg: "bg-[#ffdad6]",
+        labelText: "text-[#93000a]",
+        amountText: "text-[#ba1a1a]",
+    };
+};
+
+const TABLE_GRID_CLASS = "grid grid-cols-[1.1fr_0.9fr_1.3fr_1.8fr_1fr_0.8fr]";
+
+type TransactionModalMode = "add" | "edit";
+
+type TransactionFormState = {
+    tipo: TransactionType;
+    categoria: string;
+    descripcion: string;
+    monto: string;
+};
+
+const INITIAL_TRANSACTION_FORM: TransactionFormState = {
+    tipo: "gasto",
+    categoria: "",
+    descripcion: "",
+    monto: "",
+};
+
+// Dispara una notificación contextual para confirmar acciones sobre registros.
+const notifyAction = (message: string) => {
+    const payload = { message, timestamp: Date.now() };
+    sessionStorage.setItem("solix:last_action", JSON.stringify(payload));
+    window.dispatchEvent(new CustomEvent("solix:action", { detail: payload }));
+};
+
+// Modal reutilizable para crear, editar o borrar transacciones.
+const TransactionModal = ({
+    open,
+    mode,
+    form,
+    error,
+    submitting,
+    onClose,
+    onChange,
+    onSubmit,
+    onDelete,
+}: {
+    open: boolean;
+    mode: TransactionModalMode;
+    form: TransactionFormState;
+    error: string;
+    submitting: boolean;
+    onClose: () => void;
+    onChange: (field: keyof TransactionFormState, value: string) => void;
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    onDelete?: () => void;
+}) => {
+    if (!open) {
+        return null;
+    }
+
+    return (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-[rgba(19,27,46,0.45)] px-4">
+            <form
+                onSubmit={onSubmit}
+                className="w-full max-w-[520px] rounded-[32px] border border-[rgba(195,198,214,0.2)] bg-white p-6 shadow-[0_30px_60px_0_rgba(19,27,46,0.18)] sm:p-8"
+            >
+                <div className="mb-5 flex items-center justify-between">
+                    <h3 className="[font-family:'Manrope-Bold',Helvetica] text-[24px] font-bold leading-[32px] text-[#131b2e]">
+                        {mode === "add" ? "Agregar Registro" : "Editar Registro"}
+                    </h3>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-full px-3 py-1 [font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold text-[#434654] hover:bg-[#f2f3ff]"
+                    >
+                        Cerrar
+                    </button>
+                </div>
+
+                {error && (
+                    <p className="mb-4 [font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">{error}</p>
+                )}
+
+                <div className="grid grid-cols-1 gap-4">
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Tipo
+                        </span>
+                        <select
+                            value={form.tipo}
+                            onChange={(e) => onChange("tipo", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        >
+                            <option value="ingreso">Ingreso</option>
+                            <option value="gasto">Gasto</option>
+                        </select>
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Categoría
+                        </span>
+                        <input
+                            type="text"
+                            value={form.categoria}
+                            onChange={(e) => onChange("categoria", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Descripción
+                        </span>
+                        <input
+                            type="text"
+                            value={form.descripcion}
+                            onChange={(e) => onChange("descripcion", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.6px] text-[#434654]">
+                            Monto
+                        </span>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={form.monto}
+                            onChange={(e) => onChange("monto", e.target.value)}
+                            className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
+                        />
+                    </label>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between gap-3">
+                    <div>
+                        {mode === "edit" && onDelete && (
+                            <button
+                                type="button"
+                                onClick={onDelete}
+                                disabled={submitting}
+                                className="rounded-full border border-[rgba(186,26,26,0.35)] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#ba1a1a] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {submitting ? "Eliminando..." : "Eliminar"}
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-full border border-[rgba(195,198,214,0.5)] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#434654]"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="rounded-full bg-[#003d9b] px-5 py-2 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-white disabled:opacity-60"
+                    >
+                        {submitting ? "Guardando..." : mode === "add" ? "Agregar" : "Guardar"}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+const TransactionRow = ({
+    transaction,
+    onEdit,
+    disabled,
+}: {
+    transaction: Transaction;
+    onEdit: (transaction: Transaction) => void;
+    disabled: boolean;
+}) => {
+    const date = parseDate(transaction.fecha);
+    const styles = getCategoryIcon(transaction.tipo);
+
+    return (
+        <div className={`${TABLE_GRID_CLASS} items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative`}>
+            <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative">
+                <span className="flex min-h-[40px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden">
+                    {date.primary}
+                    <br />
+                    {date.year}
+                </span>
+            </div>
+            <div className="flex w-full pt-[32.5px] pr-[32px] pb-[32.5px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative">
+                <div className={`flex min-w-[69px] pt-[4px] pr-[12px] pb-[4px] pl-[12px] items-center shrink-0 flex-nowrap rounded-full relative ${styles.labelBg}`}>
+                    <span className={`h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] tracking-[0.6px] relative text-left uppercase whitespace-nowrap ${styles.labelText}`}>
+                        {transaction.tipo}
+                    </span>
+                </div>
+            </div>
+            <div className="flex w-full pt-0 pr-0 pb-0 pl-[32px] gap-[12px] items-center shrink-0 flex-nowrap relative">
+                <div className={`flex w-[30px] h-[32px] justify-center items-center shrink-0 flex-nowrap rounded-full relative ${styles.wrapperClass}`}>
+                    <div
+                        className="w-[10px] h-[11px] shrink-0 bg-cover bg-no-repeat"
+                        style={{ backgroundImage: `url(${styles.iconUrl})` }}
+                    />
+                </div>
+                <div className="flex w-full pr-2 flex-col items-start shrink-0 flex-nowrap relative">
+                    <span className="flex min-h-[20px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#131b2e] relative text-left overflow-hidden">
+                        {transaction.categoria}
+                    </span>
+                </div>
+            </div>
+            <div className="flex w-full pt-[24px] pr-[32px] pb-[25px] pl-[63.99px] flex-col items-start shrink-0 flex-nowrap relative">
+                <span className="flex min-h-[20px] justify-start items-center shrink-0 [font-family:'Inter-Regular',Helvetica] text-[14px] font-normal leading-[20px] text-[#434654] relative text-left overflow-hidden">
+                    {transaction.descripcion}
+                </span>
+            </div>
+            <div className="flex w-full pt-[30.5px] pr-[32px] pb-[30.5px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative">
+                <span className={`flex h-[28px] justify-end items-center shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[18px] font-bold leading-[28px] relative text-right whitespace-nowrap ${styles.amountText}`}>
+                    {formatCurrency(transaction.tipo === "ingreso" ? transaction.monto : -transaction.monto, true)}
+                </span>
+            </div>
+            <div className="flex w-full pt-[24px] pr-[24px] pb-[24px] pl-[8px] justify-end items-center shrink-0 flex-nowrap relative">
+                <button
+                    type="button"
+                    onClick={() => onEdit(transaction)}
+                    disabled={disabled}
+                    className="inline-flex items-center justify-center rounded-full border border-[#c3c6d64d] px-4 py-2 [font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold leading-4 text-[#0052cc] transition-all duration-200 hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    Editar
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// Gestiona el listado, filtros, paginación y edición de transacciones.
+export const Registros = () => {
+    const { data, loading, error, addTransaction, editTransaction, deleteTransaction } = useTransactions();
+    const [actionError, setActionError] = useState("");
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<TransactionModalMode>("add");
+    const [activeTransaction, setActiveTransaction] = useState<Transaction | null>(null);
+    const [form, setForm] = useState<TransactionFormState>(INITIAL_TRANSACTION_FORM);
+    const [submittingForm, setSubmittingForm] = useState(false);
+    const [filters, setFilters] = useState<RegistrosFilters>(INITIAL_REGISTROS_FILTERS);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [showFilterPanel, setShowFilterPanel] = useState(false);
+    const pageSize = 4;
+
+    const filteredData = useMemo(() => {
+        return filterTransactions(data, filters);
+    }, [data, filters]);
+
+    const totals = useMemo(() => {
+        const ingresos = filteredData
+            .filter((item) => item.tipo === "ingreso")
+            .reduce((acc, item) => acc + Number(item.monto || 0), 0);
+
+        const gastos = filteredData
+            .filter((item) => item.tipo === "gasto")
+            .reduce((acc, item) => acc + Number(item.monto || 0), 0);
+
+        return {
+            ingresos,
+            gastos,
+            balance: ingresos - gastos,
+        };
+    }, [filteredData]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return filteredData.slice(start, start + pageSize);
+    }, [currentPage, filteredData]);
+
+    const pageNumbers = useMemo(() => {
+        return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }, [totalPages]);
+
+    // Prepara el modal para crear un nuevo registro.
+    const handleAddRegistro = async () => {
+        setActionError("");
+        setModalMode("add");
+        setActiveTransaction(null);
+        setForm(INITIAL_TRANSACTION_FORM);
+        setModalOpen(true);
+    };
+
+    // Carga los datos del registro seleccionado para editarlo.
+    const handleEditRegistro = (transaction: Transaction) => {
+        setActionError("");
+        setModalMode("edit");
+        setActiveTransaction(transaction);
+        setForm({
+            tipo: transaction.tipo,
+            categoria: transaction.categoria,
+            descripcion: transaction.descripcion,
+            monto: String(transaction.monto),
+        });
+        setModalOpen(true);
+    };
+
+    // Actualiza un campo del formulario del modal.
+    const handleFormChange = (field: keyof TransactionFormState, value: string) => {
+        setForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    // Cierra el modal y limpia el estado temporal del formulario.
+    const handleCloseModal = () => {
+        if (submittingForm) {
+            return;
+        }
+
+        setModalOpen(false);
+        setActiveTransaction(null);
+        setForm(INITIAL_TRANSACTION_FORM);
+    };
+
+    // Valida el formulario y guarda el registro creado o editado.
+    const handleSubmitModal = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        setActionError("");
+
+        const tipo = form.tipo;
+        if (tipo !== "ingreso" && tipo !== "gasto") {
+            setActionError("El tipo debe ser ingreso o gasto.");
+            return;
+        }
+
+        const categoria = form.categoria.trim();
+        if (!categoria) {
+            setActionError("La categoría es obligatoria.");
+            return;
+        }
+
+        const descripcion = form.descripcion.trim();
+        if (!descripcion) {
+            setActionError("La descripción es obligatoria.");
+            return;
+        }
+
+        const monto = Number(form.monto);
+
+        if (!Number.isFinite(monto) || monto <= 0) {
+            setActionError("El monto debe ser un número mayor que 0.");
+            return;
+        }
+
+        setSubmittingForm(true);
+
+        try {
+            if (modalMode === "add") {
+                await addTransaction({
+                    fecha: new Date().toISOString(),
+                    tipo,
+                    categoria,
+                    descripcion,
+                    monto,
+                });
+                notifyAction("Registro agregado correctamente.");
+            } else if (activeTransaction) {
+                await editTransaction(activeTransaction.id, {
+                    tipo,
+                    categoria,
+                    descripcion,
+                    monto,
+                });
+                notifyAction("Registro actualizado correctamente.");
+            }
+
+            setModalOpen(false);
+            setActiveTransaction(null);
+            setForm(INITIAL_TRANSACTION_FORM);
+            setCurrentPage(1);
+        } catch (err) {
+            setActionError(getAuthErrorMessage(err));
+        } finally {
+            setSubmittingForm(false);
+        }
+    };
+
+    // Elimina el registro activo después de confirmación.
+    const handleDeleteRegistro = async () => {
+        if (!activeTransaction || modalMode !== "edit") {
+            return;
+        }
+
+        const confirmed = window.confirm("¿Seguro que deseas eliminar este registro?");
+        if (!confirmed) {
+            return;
+        }
+
+        setActionError("");
+        setSubmittingForm(true);
+
+        try {
+            await deleteTransaction(activeTransaction.id);
+            notifyAction("Registro eliminado correctamente.");
+            setModalOpen(false);
+            setActiveTransaction(null);
+            setForm(INITIAL_TRANSACTION_FORM);
+            setCurrentPage(1);
+        } catch (err) {
+            setActionError(getAuthErrorMessage(err));
+        } finally {
+            setSubmittingForm(false);
+        }
+    };
+
+    // Exporta los registros filtrados a un PDF.
+    const handleExportPDF = () => {
+        if (filteredData.length === 0) {
+            alert("No hay registros para exportar con los filtros aplicados.");
+            return;
+        }
+
+        const columns = [
+            { header: "Fecha", key: "fecha_formatted" },
+            { header: "Tipo", key: "tipo_display" },
+            { header: "Categoría", key: "categoria" },
+            { header: "Descripción", key: "descripcion" },
+            { header: "Monto", key: "monto_formatted" },
+        ];
+
+        const rows = filteredData.map((tx) => ({
+            fecha_formatted: new Date(tx.fecha).toLocaleDateString("es-PE"),
+            tipo_display: tx.tipo === "ingreso" ? "Ingreso" : "Gasto",
+            categoria: tx.categoria,
+            descripcion: tx.descripcion,
+            monto_formatted: formatCurrency(tx.tipo === "ingreso" ? tx.monto : -tx.monto, true),
+        }));
+
+        generatePDF("Reporte de Transacciones", columns, rows, "reporte-transacciones");
+    };
+
+    return (
+        <div className="main-container relative flex w-full min-h-screen flex-col items-start bg-[#faf8ff] overflow-x-hidden [font-family:'Inter-Regular',Helvetica]">
+            <DashboardSidebar />
+            <div className="flex min-h-screen w-full pt-0 pr-0 pb-[2px] pl-0 flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[47] lg:w-[calc(100%-288px)] lg:ml-[288px]">
+                <div className="relative z-[300] w-full">
+                    <AppTopBar />
+                </div>
+                <div className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 items-start self-stretch shrink-0 flex-nowrap relative z-[66]">
+                    <div className="flex flex-col gap-4 self-stretch shrink-0 flex-nowrap relative z-[67] sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex w-full flex-col gap-[8px] items-start shrink-0 flex-nowrap relative z-[68] sm:w-auto sm:max-w-[620px]">
+                            <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[69]">
+                                <span className="shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[28px] sm:text-[34px] font-bold leading-[34px] sm:leading-[40px] text-[#131b2e] tracking-[-0.9px] relative text-left z-[70]">
+                                    Registro de Transacciones
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[71]">
+                                <span className="h-[24px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[16px] font-normal leading-[24px] text-[#434654] relative text-left whitespace-nowrap z-[72]">
+                                    Gestione y supervise sus movimientos financieros con
+                                    precisión.
+                                </span>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleAddRegistro}
+                            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#003d9b] px-6 py-3 text-white shadow-[0_8px_10px_0_rgba(0,61,155,0.25)] transition-all duration-200 hover:bg-[#0052cc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003d9b]"
+                        >
+                            <span className="[font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-6">
+                                Agregar Registro
+                            </span>
+                        </button>
+                    </div>
+
+                    {(error || actionError) && (
+                        <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">
+                            {actionError || error}
+                        </p>
+                    )}
+
+
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 self-stretch shrink-0 relative z-[73]">
+                        <div className="flex flex-col gap-[8px] items-start bg-[#fff] rounded-[32px] p-6 border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[74]">
+                            <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[75]">
+                                <span className="h-[20px] self-stretch shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] tracking-[0.7px] relative text-left uppercase whitespace-nowrap z-[76]">
+                                    BALANCE TOTAL
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[77]">
+                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#003d9b] relative text-left whitespace-nowrap z-[78]">
+                                    {formatCurrency(totals.balance)}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-[8px] items-start bg-[#fff] rounded-[32px] p-6 border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[79]">
+                            <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[80]">
+                                <span className="h-[20px] self-stretch shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] tracking-[0.7px] relative text-left uppercase whitespace-nowrap z-[81]">
+                                    INGRESOS MENSUALES
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[82]">
+                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#006c49] relative text-left whitespace-nowrap z-[83]">
+                                    {formatCurrency(totals.ingresos, true)}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-[8px] items-start bg-[#fff] rounded-[32px] p-6 border-solid border border-[rgba(195,198,214,0.1)] relative shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-[84]">
+                            <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[85]">
+                                <span className="h-[20px] self-stretch shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] tracking-[0.7px] relative text-left uppercase whitespace-nowrap z-[86]">
+                                    GASTOS MENSUALES
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[87]">
+                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#ba1a1a] relative text-left whitespace-nowrap z-[88]">
+                                    {formatCurrency(-totals.gastos, true)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap bg-[#fff] rounded-[32px] border-solid border border-[rgba(195,198,214,0.1)] relative overflow-visible shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
+                        <div className="relative z-[300] flex w-full flex-col gap-3 bg-[rgba(242,243,255,0.5)] px-4 py-4 sm:flex-row sm:items-center sm:px-6">
+                            <div className="flex min-w-0 flex-1 flex-col items-start shrink-0 flex-nowrap">
+                                <span className="h-[28px] shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-[28px] text-[#131b2e] text-left whitespace-nowrap">
+                                    Actividad Reciente
+                                </span>
+                            </div>
+                            <div className="relative z-[301] ml-auto flex w-full shrink-0 flex-nowrap items-center justify-end gap-[16px] sm:w-auto">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFilterPanel(!showFilterPanel)}
+                                    className="flex gap-[8px] items-center shrink-0 flex-nowrap cursor-pointer hover:opacity-70 transition-opacity"
+                                >
+                                    <div className="flex w-[10.5px] flex-col items-center shrink-0 flex-nowrap">
+                                        <div className="w-[10.5px] h-[7px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/VJYcxW5iNX.png)] bg-cover bg-no-repeat" />
+                                    </div>
+                                    <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] text-center whitespace-nowrap">
+                                        Filtrar
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleExportPDF}
+                                    className="flex gap-[8px] items-center shrink-0 flex-nowrap relative z-[122] cursor-pointer hover:opacity-70 transition-opacity"
+                                >
+                                    <div className="flex w-[9.333px] flex-col items-center shrink-0 flex-nowrap relative z-[99]">
+                                        <div className="w-[9.333px] h-[9.333px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/rGTigOR2Nd.png)] bg-cover bg-no-repeat relative z-[100]" />
+                                    </div>
+                                    <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] relative text-center whitespace-nowrap z-[101]">
+                                        Exportar
+                                    </span>
+                                </button>
+                                <FilterPanelRegistros 
+                                    filters={filters} 
+                                    onFiltersChange={setFilters}
+                                    isOpen={showFilterPanel}
+                                    onClose={() => setShowFilterPanel(false)}
+                                />
+                            </div>
+                        </div>
+                        <div className="w-full overflow-x-auto">
+                            <div className="flex min-w-[960px] flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[102]">
+                                <div className={`${TABLE_GRID_CLASS} items-start self-stretch shrink-0 border-solid border-t border-t-[rgba(195,198,214,0.1)] relative z-[103]`}>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[104]">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[105]">
+                                            Fecha
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[106]">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[107]">
+                                            Tipo
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[108]">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[109]">
+                                            Categoría
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-start shrink-0 flex-nowrap relative z-[110]">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-left uppercase whitespace-nowrap z-[111]">
+                                            Descripción
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[32px] pb-[20px] pl-[32px] flex-col items-end shrink-0 flex-nowrap relative z-[112]">
+                                        <span className="flex w-[45.47px] h-[16px] justify-end items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-right uppercase whitespace-nowrap z-[113]">
+                                            Monto
+                                        </span>
+                                    </div>
+                                    <div className="flex w-full pt-[20px] pr-[24px] pb-[20px] pl-[8px] flex-col items-end shrink-0 flex-nowrap relative">
+                                        <span className="h-[16px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[12px] font-bold leading-[16px] text-[#434654] tracking-[0.6px] relative text-right uppercase whitespace-nowrap">
+                                            Acciones
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-[-1px] items-start self-stretch shrink-0 flex-nowrap relative z-[114]">
+                                    {loading ? (
+                                        <div className={`${TABLE_GRID_CLASS} items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative`}>
+                                            <div className="col-span-6 px-8 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                                Cargando transacciones...
+                                            </div>
+                                        </div>
+                                    ) : data.length === 0 ? (
+                                        <div className={`${TABLE_GRID_CLASS} items-center self-stretch shrink-0 border-solid border-b border-b-[rgba(195,198,214,0.1)] relative`}>
+                                            <div className="col-span-6 px-8 py-8 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#434654]">
+                                                Aún no tienes transacciones registradas.
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        paginatedData.map((transaction) => (
+                                            <TransactionRow
+                                                key={transaction.id}
+                                                transaction={transaction}
+                                                onEdit={handleEditRegistro}
+                                                disabled={submittingForm}
+                                            />
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex px-4 py-4 sm:px-8 sm:py-6 flex-col gap-3 sm:flex-row sm:justify-between sm:items-center self-stretch shrink-0 flex-nowrap bg-[rgba(242,243,255,0.2)] relative z-[20]">
+                            <div className="flex w-full sm:w-[234.08px] flex-col items-start shrink-0 flex-nowrap relative z-[180]">
+                                <span className="h-[20px] shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-medium leading-[20px] text-[#434654] relative text-left whitespace-nowrap z-[181]">
+                                    Mostrando {paginatedData.length} de {data.length} transacciones
+                                </span>
+                            </div>
+                            <div className="flex w-full sm:w-[232px] gap-[8px] items-start justify-center sm:justify-start shrink-0 flex-nowrap relative z-[182]">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[183] disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#f2f3ff]"
+                                    >
+                                    <div className="flex w-[7.4px] flex-col items-center shrink-0 flex-nowrap relative z-[184]">
+                                        <div className="w-[7.4px] h-[12px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/ySHF1wAAtB.png)] bg-cover bg-no-repeat relative z-[185]" />
+                                    </div>
+                                    </button>
+                                    {pageNumbers.map((pageNumber) => {
+                                    const isActive = pageNumber === currentPage;
+
+                                    return (
+                                        <button
+                                            key={pageNumber}
+                                            type="button"
+                                            onClick={() => setCurrentPage(pageNumber)}
+                                            className={`flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border relative transition-all duration-200 ${
+                                                isActive
+                                                    ? "bg-[#0052cc] border-[#0052cc]"
+                                                    : "border-[rgba(195,198,214,0.3)] hover:bg-[#f2f3ff]"
+                                            }`}
+                                        >
+                                            <span className={`flex h-[24px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-[24px] relative text-center whitespace-nowrap ${
+                                                isActive ? "text-[#fff]" : "text-[#434654]"
+                                            }`}>
+                                                {pageNumber}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[192] hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <div className="flex w-[7.4px] flex-col items-center shrink-0 flex-nowrap relative z-[193]">
+                                        <div className="w-[7.4px] h-[12px] shrink-0 bg-[url(https://codia-f2c.s3.us-west-1.amazonaws.com/image/2026-04-12/1RJYiJee7R.png)] bg-cover bg-no-repeat relative z-[194]" />
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <TransactionModal
+                open={modalOpen}
+                mode={modalMode}
+                form={form}
+                error={actionError}
+                submitting={submittingForm}
+                onClose={handleCloseModal}
+                onChange={handleFormChange}
+                onSubmit={handleSubmitModal}
+                onDelete={handleDeleteRegistro}
+            />
+        </div>
+    );
+};
