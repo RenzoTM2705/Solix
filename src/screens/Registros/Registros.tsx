@@ -173,6 +173,7 @@ const TransactionModal = ({
                             type="text"
                             value={form.descripcion}
                             onChange={(e) => onChange("descripcion", e.target.value)}
+                            maxLength={25}
                             className="rounded-full bg-[#f2f3ff] px-5 py-3 [font-family:'Inter-Regular',Helvetica] text-[14px] text-[#131b2e] outline-none"
                         />
                     </label>
