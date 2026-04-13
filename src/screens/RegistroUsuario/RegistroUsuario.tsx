@@ -31,7 +31,7 @@ export const RegistroUsuario = () => {
         setSubmitting(true);
 
         try {
-            await register(email, password);
+            await register(email, password, fullName);
             navigate("/dashboard");
         } catch (err) {
             setError(getAuthErrorMessage(err));
