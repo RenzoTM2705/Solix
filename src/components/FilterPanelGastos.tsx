@@ -61,7 +61,7 @@ export const FilterPanelGastos = ({
                     {/* Estado - OBLIGATORIO */}
                     <div className="flex flex-col gap-3">
                         <label className="font-semibold text-[#131b2e] flex items-center gap-2 text-sm">
-                            🟡 Estado <span className="text-red-600">*</span>
+                            Estado
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                             {(["all", "pendiente", "pagado"] as const).map((estado) => (
@@ -86,7 +86,7 @@ export const FilterPanelGastos = ({
                     {/* Fecha programada */}
                     <div className="flex flex-col gap-3">
                         <label className="font-semibold text-[#131b2e] flex items-center gap-2 text-sm">
-                            🗓️ Fecha programada
+                            Fecha programada
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                             {(["all", "today", "thisWeek", "overdue", "next7"] as const).map((range) => (
@@ -113,7 +113,7 @@ export const FilterPanelGastos = ({
                     {/* Monto */}
                     <div className="flex flex-col gap-3">
                         <label className="font-semibold text-[#131b2e] flex items-center gap-2 text-sm">
-                            💸 Monto
+                            Monto
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                             {(["all", "low", "high"] as const).map((filter) => (
