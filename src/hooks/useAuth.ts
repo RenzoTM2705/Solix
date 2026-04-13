@@ -1,14 +1,11 @@
 // Hook central de autenticacion: expone estado de usuario, login, registro y logout.
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "../services/supabase";
+import { isSupabaseConfigured, setAuthStorageMode, supabase } from "../services/supabase";
 import {
-    getCurrentUser,
     signIn as signInService,
     signOut as signOutService,
     signUp as signUpService,
-    checkInactivityTimeout,
-    updateLastActivityTime,
 } from "../services/auth.service";
 
 type AuthSnapshot = {
@@ -38,6 +35,23 @@ const updateAuthSnapshot = (next: Partial<AuthSnapshot>) => {
     emitAuthSnapshot();
 };
 
+const subscribeToAuthState = () => {
+    if (!supabase || authSubscription) {
+        return;
+    }
+
+    const {
+        data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+        updateAuthSnapshot({
+            user: session?.user ?? null,
+            loading: false,
+        });
+    });
+
+    authSubscription = subscription;
+};
+
 const ensureAuthInitialization = () => {
     if (authInitialized) {
         return authInitPromise ?? Promise.resolve();
@@ -50,42 +64,24 @@ const ensureAuthInitialization = () => {
         return Promise.resolve();
     }
 
+    subscribeToAuthState();
+
     authInitPromise = (async () => {
         try {
-            const hasExpired = await checkInactivityTimeout();
+            const { data, error } = await supabase.auth.getSession();
 
-            if (hasExpired) {
-                updateAuthSnapshot({ user: null, loading: false });
-                return;
+            if (error) {
+                throw error;
             }
 
-            const rememberMe = localStorage.getItem("solix.rememberMe");
-            if (rememberMe === "false" && sessionStorage.getItem("supabase.temp.token") === null) {
-                await signOutService();
-                updateAuthSnapshot({ user: null, loading: false });
-                return;
-            }
-
-            const currentUser = await getCurrentUser();
-            if (currentUser) {
-                updateLastActivityTime();
-            }
-
-            updateAuthSnapshot({ user: currentUser, loading: false });
+            updateAuthSnapshot({
+                user: data.session?.user ?? null,
+                loading: false,
+            });
         } catch {
             updateAuthSnapshot({ user: null, loading: false });
         }
     })();
-
-    if (!authSubscription) {
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            updateAuthSnapshot({ user: session?.user ?? null, loading: false });
-        });
-
-        authSubscription = subscription;
-    }
 
     return authInitPromise;
 };
@@ -95,7 +91,6 @@ export const useAuth = () => {
 
     useEffect(() => {
         authListeners.add(setSnapshot);
-        setSnapshot(authSnapshot);
         void ensureAuthInitialization();
 
         return () => {
@@ -104,19 +99,30 @@ export const useAuth = () => {
     }, []);
 
     const login = useCallback(async (email: string, password: string, rememberMe: boolean = true) => {
-        const data = await signInService(email, password, rememberMe);
-        updateAuthSnapshot({ user: data.user ?? null, loading: false });
+        setAuthStorageMode(rememberMe ? "local" : "session");
+
+        const data = await signInService(email, password);
+        updateAuthSnapshot({
+            user: data.session?.user ?? null,
+            loading: false,
+        });
         return data;
     }, []);
 
     const register = useCallback(async (email: string, password: string, fullName?: string) => {
+        setAuthStorageMode("local");
+
         const data = await signUpService(email, password, fullName);
-        updateAuthSnapshot({ user: data.user ?? null, loading: false });
+        updateAuthSnapshot({
+            user: data.session?.user ?? null,
+            loading: false,
+        });
         return data;
     }, []);
 
     const logout = useCallback(async () => {
         await signOutService();
+        setAuthStorageMode("local");
         updateAuthSnapshot({ user: null, loading: false });
     }, []);
 

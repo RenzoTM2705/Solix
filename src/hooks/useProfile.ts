@@ -1,5 +1,5 @@
 // Hook para leer y refrescar el perfil asociado al usuario autenticado.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./useAuth";
 import { getProfile } from "../services/profile.service";
 import type { Profile } from "../types/profile";
@@ -32,9 +32,13 @@ const fetchProfileCached = (userId: string, force = false) => {
 export const useProfile = () => {
     const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     const refreshProfile = useCallback(async (force = false) => {
+        if (loading) {
+            return;
+        }
+
         if (authLoading) {
             setLoading(true);
             return;
@@ -53,11 +57,28 @@ export const useProfile = () => {
         } finally {
             setLoading(false);
         }
-    }, [authLoading, user?.id]);
+    }, [authLoading, loading, user?.id]);
+
+    const refreshProfileRef = useRef(refreshProfile);
 
     useEffect(() => {
-        refreshProfile();
+        refreshProfileRef.current = refreshProfile;
     }, [refreshProfile]);
+
+    useEffect(() => {
+        if (authLoading) {
+            setLoading(true);
+            return;
+        }
+
+        if (!user?.id) {
+            setProfile(null);
+            setLoading(false);
+            return;
+        }
+
+        void refreshProfileRef.current();
+    }, [authLoading, user?.id]);
 
     return {
         profile,

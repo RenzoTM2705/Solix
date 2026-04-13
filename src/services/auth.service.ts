@@ -62,7 +62,7 @@ export const signUp = async (email: string, password: string, fullName?: string)
     return data;
 };
 
-export const signIn = async (email: string, password: string, rememberMe: boolean = true) => {
+export const signIn = async (email: string, password: string) => {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -75,21 +75,6 @@ export const signIn = async (email: string, password: string, rememberMe: boolea
 
     // Guardar timestamp de actividad
     updateLastActivityTime();
-
-    // Gestionar persistencia según rememberMe
-    if (data.session) {
-        if (rememberMe) {
-            // Mantener en localStorage (persistente)
-            localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-            localStorage.setItem('solix.rememberMe', 'true');
-            sessionStorage.removeItem('supabase.temp.token');
-        } else {
-            // Guardar solo en sessionStorage (temporal)
-            sessionStorage.setItem('supabase.temp.token', JSON.stringify(data.session));
-            localStorage.removeItem('supabase.auth.token');
-            localStorage.setItem('solix.rememberMe', 'false');
-        }
-    }
 
     return data;
 };
@@ -169,11 +154,6 @@ export const signOut = async () => {
     if (error) {
         throw error;
     }
-
-    // Limpiar tanto localStorage como sessionStorage
-    localStorage.removeItem('supabase.auth.token');
-    sessionStorage.removeItem('supabase.temp.token');
-    localStorage.removeItem('solix.rememberMe');
     localStorage.removeItem('solix.lastActivity');
     sessionStorage.removeItem('solix.lastActivity');
 };
