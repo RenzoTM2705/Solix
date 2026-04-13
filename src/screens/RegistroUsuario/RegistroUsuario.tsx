@@ -32,7 +32,7 @@ export const RegistroUsuario = () => {
 
         try {
             await register(email, password, fullName);
-            navigate("/dashboard");
+            navigate("/?confirmar-correo=1", { replace: true });
         } catch (err) {
             setError(getAuthErrorMessage(err));
         } finally {
@@ -90,7 +90,7 @@ export const RegistroUsuario = () => {
                                         value={fullName}
                                         onChange={(e) => setFullName(e.target.value)}
                                         placeholder="John Doe"
-                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685] outline-none"
+                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-black outline-none"
                                     />
                                 </div>
 
@@ -103,7 +103,7 @@ export const RegistroUsuario = () => {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="email@ejemplo.com"
-                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685] outline-none"
+                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-black outline-none"
                                     />
                                 </div>
 
@@ -116,7 +116,7 @@ export const RegistroUsuario = () => {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
-                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685] outline-none"
+                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-black outline-none"
                                     />
                                 </div>
 
@@ -129,7 +129,7 @@ export const RegistroUsuario = () => {
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         placeholder="••••••••"
-                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-[#737685] outline-none"
+                                        className="w-full rounded-[32px] bg-[#f2f3ff] px-5 py-[18px] [font-family:'Inter-Regular',Helvetica] text-base text-black outline-none"
                                     />
                                 </div>
                             </div>

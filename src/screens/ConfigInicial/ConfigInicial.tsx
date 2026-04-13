@@ -273,15 +273,9 @@ export const ConfigInicial = () => {
                             </button>
                         </div>
                     </div>
-                    <div className="flex gap-[7.99px] justify-center items-center self-stretch shrink-0 flex-nowrap relative z-[39] px-2">
-                        <div className="flex w-[11.667px] flex-col items-start shrink-0 flex-nowrap relative z-40">
-                            <div className="h-[11.667px] w-[11.667px] shrink-0 rounded-full bg-[#003d9b]" />
-                        </div>
-                    </div>
                 </div>
                 <div className="w-[420px] h-[420px] md:w-[600px] md:h-[600px] shrink-0 bg-[rgba(218,226,255,0.2)] rounded-full absolute top-[-210px] md:top-[-300px] right-[-120px] z-[1]" />
             </div>
-            <div className="absolute bottom-0 left-0 right-0 z-[44] h-[4px] bg-gradient-to-r from-[#003d9b] via-[#0052cc] to-[#6cf8bb]" />
         </div>
     );
 }

@@ -1,6 +1,6 @@
 // Pantalla de inicio de sesion con persistencia opcional y acceso a recuperacion de clave.
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { getAuthErrorMessage } from "../../services/auth.service";
 // import icon from "./icon.svg";
@@ -15,7 +15,9 @@ export const Login = () => {
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { login } = useAuth();
+    const showEmailConfirmationMessage = searchParams.get("confirmar-correo") === "1";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,6 +70,11 @@ export const Login = () => {
                             </div>
                         </div>
                         <div className="flex flex-col items-start gap-6 pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto]">
+                            {showEmailConfirmationMessage && (
+                                <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#00714d]">
+                                    Te enviamos un correo de verificación. Debes confirmar tu correo antes de iniciar sesión.
+                                </p>
+                            )}
                             {error && (
                                 <p className="[font-family:'Inter-Regular',Helvetica] text-sm text-[#dc2626]">
                                     {error}
