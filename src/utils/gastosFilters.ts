@@ -1,5 +1,6 @@
 // Filtros y helpers para la vista de gastos programados.
 import type { ScheduledTransaction } from "../types/scheduledTransaction";
+import { parseDateInPeru } from "./peruDate";
 
 export interface GastosFilters {
     estado: "all" | "pendiente" | "pagado";
@@ -74,8 +75,8 @@ export const filterScheduledTransactions = (
 
         // Filtro de fecha programada
         const { startDate, endDate } = getDateRangeForScheduled(filters.dateRange);
-        const txDate = new Date(transaction.fecha_programada);
-        if (txDate < startDate || txDate > endDate) {
+        const txDate = parseDateInPeru(transaction.fecha_programada);
+        if (!txDate || txDate < startDate || txDate > endDate) {
             return false;
         }
 
