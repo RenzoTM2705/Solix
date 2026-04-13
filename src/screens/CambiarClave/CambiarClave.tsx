@@ -1,3 +1,4 @@
+// Pantalla que permite establecer una nueva contraseña desde el enlace del correo.
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getAuthErrorMessage, updatePassword } from "../../services/auth.service";

@@ -1,3 +1,4 @@
+// Detecta inactividad del usuario y cierra la sesion automaticamente.
 import { useEffect, useRef } from "react";
 import { useAuth } from "./useAuth";
 import { updateLastActivityTime } from "../services/auth.service";

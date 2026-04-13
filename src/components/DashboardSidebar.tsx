@@ -1,3 +1,4 @@
+// Navegacion lateral principal del dashboard.
 import { NavLink } from "react-router-dom";
 
 export const DashboardSidebar = () => {

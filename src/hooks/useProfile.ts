@@ -1,3 +1,4 @@
+// Hook para leer y refrescar el perfil asociado al usuario autenticado.
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
 import { getProfile } from "../services/profile.service";

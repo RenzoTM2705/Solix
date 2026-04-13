@@ -1,3 +1,4 @@
+// Pantalla para solicitar el correo de recuperacion de contraseña.
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";

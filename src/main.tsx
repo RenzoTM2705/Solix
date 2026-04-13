@@ -1,3 +1,4 @@
+// Punto de entrada de la app: monta React y habilita el router.
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'

@@ -1,3 +1,4 @@
+// Hook para listar y mutar los movimientos financieros del usuario.
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
 import {

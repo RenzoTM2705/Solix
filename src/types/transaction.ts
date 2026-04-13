@@ -1,3 +1,4 @@
+// Tipos base para los movimientos financieros del usuario.
 export type TransactionType = "ingreso" | "gasto";
 
 export interface Transaction {

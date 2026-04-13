@@ -1,3 +1,4 @@
+// Vista principal del tablero financiero.
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
 import { AppTopBar } from "../../components/AppTopBar";
 import { useTransactions } from "../../hooks/useTransactions";

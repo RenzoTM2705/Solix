@@ -1,3 +1,4 @@
+// Servicios de autenticacion y manejo de sesiones sobre Supabase.
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseClient } from "./supabase";
 

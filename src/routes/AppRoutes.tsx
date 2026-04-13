@@ -1,3 +1,4 @@
+// Define las rutas públicas y protegidas de Solix.
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";

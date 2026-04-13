@@ -1,3 +1,4 @@
+// Barra superior del dashboard con notificaciones contextuales y menu de perfil.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useProfile } from "../hooks/useProfile";
 import { useScheduledTransactions } from "../hooks/useScheduledTransactions";
@@ -11,6 +12,7 @@ type NotificationItem = {
     level: "high" | "medium" | "info";
 };
 
+// Formatea montos para mostrarlos en notificaciones y paneles de resumen.
 const formatCurrency = (amount: number) => {
     return `S/${Math.abs(amount).toLocaleString("en-US", {
         minimumFractionDigits: 2,
@@ -18,6 +20,7 @@ const formatCurrency = (amount: number) => {
     })}`;
 };
 
+// Calcula cuántos días separan dos fechas normalizadas al inicio del día.
 const getDayDifference = (targetDate: Date, baseDate: Date) => {
     const oneDay = 1000 * 60 * 60 * 24;
     const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()).getTime();
@@ -25,6 +28,7 @@ const getDayDifference = (targetDate: Date, baseDate: Date) => {
     return Math.round((target - base) / oneDay);
 };
 
+// Obtiene el inicio de la semana para construir resúmenes semanales.
 const getStartOfWeek = (date: Date) => {
     const day = date.getDay();
     const mondayDiff = day === 0 ? -6 : 1 - day;
@@ -34,6 +38,7 @@ const getStartOfWeek = (date: Date) => {
     return weekStart;
 };
 
+// Renderiza la barra superior con alertas, marca y menú de perfil.
 export const AppTopBar = () => {
     const { data: transactions } = useTransactions();
     const { data: scheduledTransactions } = useScheduledTransactions();

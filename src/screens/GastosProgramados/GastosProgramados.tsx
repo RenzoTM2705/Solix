@@ -1,3 +1,4 @@
+// Vista de gastos programados con filtros, edición y exportación.
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
 import { AppTopBar } from "../../components/AppTopBar";
 import { FilterPanelGastos } from "../../components/FilterPanelGastos";
@@ -76,12 +77,14 @@ const INITIAL_FORM: ScheduledExpenseForm = {
     estado: "pendiente",
 };
 
+// Dispara una notificación contextual para confirmar cambios en gastos programados.
 const notifyAction = (message: string) => {
     const payload = { message, timestamp: Date.now() };
     sessionStorage.setItem("solix:last_action", JSON.stringify(payload));
     window.dispatchEvent(new CustomEvent("solix:action", { detail: payload }));
 };
 
+// Modal reutilizable para crear, editar o eliminar un gasto programado.
 const ScheduledExpenseModal = ({
     open,
     form,
@@ -224,6 +227,7 @@ const ScheduledExpenseModal = ({
     );
 };
 
+// Gestiona la lista, filtros, edición y exportación de gastos programados.
 export const GastosProgramados = () => {
     const {
         data,
@@ -287,6 +291,7 @@ export const GastosProgramados = () => {
         return Array.from({ length: totalPages }, (_, index) => index + 1);
     }, [totalPages]);
 
+    // Abre el modal en modo creación para un nuevo gasto programado.
     const handleAddScheduledTransaction = async () => {
         setActionError("");
         setModalMode("add");
@@ -295,6 +300,7 @@ export const GastosProgramados = () => {
         setModalOpen(true);
     };
 
+    // Carga un gasto existente dentro del modal para edición.
     const handleOpenEditModal = (item: ScheduledTransaction) => {
         setActionError("");
         setModalMode("edit");
@@ -309,6 +315,7 @@ export const GastosProgramados = () => {
         setModalOpen(true);
     };
 
+    // Actualiza un campo del formulario del gasto programado.
     const handleFormChange = (field: keyof ScheduledExpenseForm, value: string) => {
         setForm((prev) => ({
             ...prev,
@@ -316,6 +323,7 @@ export const GastosProgramados = () => {
         }));
     };
 
+    // Cierra el modal y restablece el formulario temporal.
     const handleCloseModal = () => {
         if (submittingForm) {
             return;
@@ -326,6 +334,7 @@ export const GastosProgramados = () => {
         setForm(INITIAL_FORM);
     };
 
+    // Valida y guarda un gasto programado nuevo o editado.
     const handleSubmitModal = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setActionError("");
@@ -386,6 +395,7 @@ export const GastosProgramados = () => {
         }
     };
 
+    // Elimina el gasto programado actualmente seleccionado.
     const handleDeleteFromModal = async () => {
         if (!activeItem) {
             return;
@@ -413,6 +423,7 @@ export const GastosProgramados = () => {
         }
     };
 
+    // Exporta el listado filtrado de gastos programados a PDF.
     const handleExportPDF = () => {
         if (filteredData.length === 0) {
             alert("No hay gastos programados para exportar con los filtros aplicados.");

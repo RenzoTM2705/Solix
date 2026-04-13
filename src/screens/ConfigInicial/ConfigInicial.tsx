@@ -1,4 +1,5 @@
 
+// Pantalla de onboarding para definir el capital inicial del usuario.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileMenu } from "../../components/ProfileMenu";

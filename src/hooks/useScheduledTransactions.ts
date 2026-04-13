@@ -1,3 +1,4 @@
+// Hook para administrar los gastos programados del usuario.
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
 import {

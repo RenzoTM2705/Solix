@@ -1,3 +1,4 @@
+// Vista de movimientos con filtros, edición y exportación.
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
 import { AppTopBar } from "../../components/AppTopBar";
 import { FilterPanelRegistros } from "../../components/FilterPanelRegistros";
@@ -83,12 +84,14 @@ const INITIAL_TRANSACTION_FORM: TransactionFormState = {
     monto: "",
 };
 
+// Dispara una notificación contextual para confirmar acciones sobre registros.
 const notifyAction = (message: string) => {
     const payload = { message, timestamp: Date.now() };
     sessionStorage.setItem("solix:last_action", JSON.stringify(payload));
     window.dispatchEvent(new CustomEvent("solix:action", { detail: payload }));
 };
 
+// Modal reutilizable para crear, editar o borrar transacciones.
 const TransactionModal = ({
     open,
     mode,
@@ -289,6 +292,7 @@ const TransactionRow = ({
     );
 };
 
+// Gestiona el listado, filtros, paginación y edición de transacciones.
 export const Registros = () => {
     const { data, loading, error, addTransaction, editTransaction, deleteTransaction } = useTransactions();
     const [actionError, setActionError] = useState("");
@@ -339,6 +343,7 @@ export const Registros = () => {
         return Array.from({ length: totalPages }, (_, index) => index + 1);
     }, [totalPages]);
 
+    // Prepara el modal para crear un nuevo registro.
     const handleAddRegistro = async () => {
         setActionError("");
         setModalMode("add");
@@ -347,6 +352,7 @@ export const Registros = () => {
         setModalOpen(true);
     };
 
+    // Carga los datos del registro seleccionado para editarlo.
     const handleEditRegistro = (transaction: Transaction) => {
         setActionError("");
         setModalMode("edit");
@@ -360,6 +366,7 @@ export const Registros = () => {
         setModalOpen(true);
     };
 
+    // Actualiza un campo del formulario del modal.
     const handleFormChange = (field: keyof TransactionFormState, value: string) => {
         setForm((prev) => ({
             ...prev,
@@ -367,6 +374,7 @@ export const Registros = () => {
         }));
     };
 
+    // Cierra el modal y limpia el estado temporal del formulario.
     const handleCloseModal = () => {
         if (submittingForm) {
             return;
@@ -377,6 +385,7 @@ export const Registros = () => {
         setForm(INITIAL_TRANSACTION_FORM);
     };
 
+    // Valida el formulario y guarda el registro creado o editado.
     const handleSubmitModal = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
@@ -440,6 +449,7 @@ export const Registros = () => {
         }
     };
 
+    // Elimina el registro activo después de confirmación.
     const handleDeleteRegistro = async () => {
         if (!activeTransaction || modalMode !== "edit") {
             return;
@@ -467,6 +477,7 @@ export const Registros = () => {
         }
     };
 
+    // Exporta los registros filtrados a un PDF.
     const handleExportPDF = () => {
         if (filteredData.length === 0) {
             alert("No hay registros para exportar con los filtros aplicados.");

@@ -1,3 +1,4 @@
+// Pantalla de confirmacion cuando el correo de recuperacion fue enviado.
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 
