@@ -25,10 +25,12 @@ export const createProfile = async (userId: string, monto: number): Promise<Prof
 
     const { data, error } = await supabase
         .from(TABLE_NAME)
-        .insert({
+        .upsert({
             id: userId,
             monto_inicial: monto,
             is_configured: true,
+        }, {
+            onConflict: "id",
         })
         .select("id, monto_inicial, is_configured, avatar_url")
         .single();

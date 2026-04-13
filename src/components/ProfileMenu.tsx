@@ -106,7 +106,7 @@ export const ProfileMenu = ({ className = "", avatarClassName = "h-10 w-10" }: P
             setUploadingAvatar(true);
             setAvatarError("");
             await updateUserAvatar(user.id, file);
-            await refreshProfile();
+            await refreshProfile(true);
             setOpen(false);
         } catch (error) {
             const message =
