@@ -8,6 +8,7 @@ import type { ScheduledTransaction } from "../../types/scheduledTransaction";
 import { useEffect, useMemo, useState } from "react";
 import type { GastosFilters } from "../../utils/gastosFilters";
 import { INITIAL_GASTOS_FILTERS, filterScheduledTransactions } from "../../utils/gastosFilters";
+import { formatDateInPeru, getPeruCalendarDate, parseDateInPeru } from "../../utils/peruDate";
 
 const formatCurrency = (value: number, withSign = false) => {
     const abs = Math.abs(value).toLocaleString("en-US", {
@@ -24,13 +25,7 @@ const formatCurrency = (value: number, withSign = false) => {
 };
 
 const formatDate = (value: string) => {
-    const parsed = new Date(value);
-
-    if (Number.isNaN(parsed.getTime())) {
-        return value;
-    }
-
-    return parsed.toLocaleDateString("es-PE", {
+    return formatDateInPeru(value, {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -72,7 +67,7 @@ const INITIAL_FORM: ScheduledExpenseForm = {
     descripcion: "",
     monto: "",
     categoria: "",
-    fecha_programada: new Date().toISOString().slice(0, 10),
+    fecha_programada: getPeruCalendarDate(),
     estado: "pendiente",
 };
 
@@ -260,8 +255,8 @@ export const GastosProgramados = () => {
         const pendingItems = filteredData.filter((item) => item.estado === "pendiente");
         const paidItems = filteredData.filter((item) => item.estado === "pagado");
         const upcomingItems = pendingItems.filter((item) => {
-            const parsed = new Date(item.fecha_programada);
-            return !Number.isNaN(parsed.getTime()) && parsed >= now && parsed <= limit;
+            const parsed = parseDateInPeru(item.fecha_programada);
+            return !!parsed && parsed >= now && parsed <= limit;
         });
 
         return {
@@ -366,7 +361,7 @@ export const GastosProgramados = () => {
                     descripcion,
                     monto,
                     categoria,
-                    fecha_programada: new Date(form.fecha_programada).toISOString(),
+                    fecha_programada: form.fecha_programada,
                     estado: form.estado,
                 });
                 notifyAction(
@@ -379,7 +374,7 @@ export const GastosProgramados = () => {
                     descripcion,
                     monto,
                     categoria,
-                    fecha_programada: new Date(form.fecha_programada).toISOString(),
+                    fecha_programada: form.fecha_programada,
                 });
                 notifyAction("Gasto programado agregado correctamente.");
             }
@@ -442,7 +437,11 @@ export const GastosProgramados = () => {
             descripcion: item.descripcion,
             categoria: item.categoria,
             monto_formatted: formatCurrency(item.monto),
-            fecha_programada_formatted: new Date(item.fecha_programada).toLocaleDateString("es-PE"),
+            fecha_programada_formatted: formatDateInPeru(item.fecha_programada, {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }),
             estado_display: item.estado === "pagado" ? "Pagado" : "Pendiente",
         }));
 
