@@ -338,8 +338,26 @@ export const Registros = () => {
     }, [currentPage, filteredData]);
 
     const pageNumbers = useMemo(() => {
-        return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }, [totalPages]);
+        if (totalPages <= 3) {
+            return Array.from({ length: totalPages }, (_, index) => index + 1);
+        }
+
+        // Mostrar máximo 3 páginas de forma inteligente
+        const pages: number[] = [];
+        
+        if (currentPage <= 2) {
+            // Si estamos al inicio, mostrar: 1, 2, 3
+            pages.push(1, 2, 3);
+        } else if (currentPage >= totalPages - 1) {
+            // Si estamos al final, mostrar: totalPages-2, totalPages-1, totalPages
+            pages.push(totalPages - 2, totalPages - 1, totalPages);
+        } else {
+            // Si estamos en el medio, mostrar: currentPage-1, currentPage, currentPage+1
+            pages.push(currentPage - 1, currentPage, currentPage + 1);
+        }
+        
+        return pages;
+    }, [totalPages, currentPage]);
 
     // Prepara el modal para crear un nuevo registro.
     const handleAddRegistro = async () => {
@@ -692,14 +710,14 @@ export const Registros = () => {
                                     Mostrando {paginatedData.length} de {data.length} transacciones
                                 </span>
                             </div>
-                            <div className="flex w-full sm:w-[232px] gap-[8px] items-start justify-center sm:justify-start shrink-0 flex-nowrap relative z-[182]">
+                            <div className="flex gap-1 sm:gap-2 items-center justify-center sm:justify-start shrink-0 relative z-[182]">
                                     <button
                                         type="button"
                                         onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                                         disabled={currentPage === 1}
-                                        className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[183] disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#f2f3ff]"
+                                        className="flex w-[36px] sm:w-[40px] h-[36px] sm:h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[183] disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#f2f3ff] transition-colors"
                                     >
-                                        <span className="text-[18px] leading-none text-[#434654]">&lsaquo;</span>
+                                        <span className="text-[16px] sm:text-[18px] leading-none text-[#434654]">&lsaquo;</span>
                                     </button>
                                     {pageNumbers.map((pageNumber) => {
                                     const isActive = pageNumber === currentPage;
@@ -709,13 +727,13 @@ export const Registros = () => {
                                             key={pageNumber}
                                             type="button"
                                             onClick={() => setCurrentPage(pageNumber)}
-                                            className={`flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border relative transition-all duration-200 ${
+                                            className={`flex w-[36px] sm:w-[40px] h-[36px] sm:h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border relative transition-all duration-200 ${
                                                 isActive
                                                     ? "bg-[#0052cc] border-[#0052cc]"
                                                     : "border-[rgba(195,198,214,0.3)] hover:bg-[#f2f3ff]"
                                             }`}
                                         >
-                                            <span className={`flex h-[24px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[16px] font-bold leading-[24px] relative text-center whitespace-nowrap ${
+                                            <span className={`flex justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] sm:text-[16px] font-bold leading-[20px] sm:leading-[24px] relative text-center whitespace-nowrap ${
                                                 isActive ? "text-[#fff]" : "text-[#434654]"
                                             }`}>
                                                 {pageNumber}
@@ -727,9 +745,9 @@ export const Registros = () => {
                                     type="button"
                                     onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                                     disabled={currentPage === totalPages}
-                                    className="flex w-[40px] h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[192] hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex w-[36px] sm:w-[40px] h-[36px] sm:h-[40px] justify-center items-center shrink-0 flex-nowrap rounded-full border-solid border border-[rgba(195,198,214,0.3)] relative z-[192] hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                                 >
-                                    <span className="text-[18px] leading-none text-[#434654]">&rsaquo;</span>
+                                    <span className="text-[16px] sm:text-[18px] leading-none text-[#434654]">&rsaquo;</span>
                                 </button>
                             </div>
                         </div>
