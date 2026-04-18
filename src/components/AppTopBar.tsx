@@ -1,19 +1,46 @@
 // Barra superior del dashboard con notificaciones contextuales y menu de perfil.
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ProfileMenu } from "./ProfileMenu";
+import { useNotifications } from "../hooks/useNotifications";
 
 const TopBarNotifications = lazy(() =>
     import("./TopBarNotifications").then((module) => ({ default: module.TopBarNotifications })),
 );
+
+const VIEWED_NOTIFICATIONS_SIGNATURE_KEY = "solix:viewed_notifications_signature";
+
+const buildNotificationSignature = (items: Array<{ id: string; title: string; detail: string; level: string }>) => {
+    return items
+        .map((item) => `${item.id}::${item.title}::${item.level}::${item.detail}`)
+        .sort()
+        .join("||");
+};
 
 // Renderiza la barra superior con alertas, marca y menú de perfil.
 export const AppTopBar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
     const [notificationNow, setNotificationNow] = useState(0);
+    const [viewedSignature, setViewedSignature] = useState(() => {
+        if (typeof window === "undefined") {
+            return "";
+        }
+
+        try {
+            return sessionStorage.getItem(VIEWED_NOTIFICATIONS_SIGNATURE_KEY) ?? "";
+        } catch {
+            return "";
+        }
+    });
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const bellButtonRef = useRef<HTMLButtonElement | null>(null);
     const [panelPosition, setPanelPosition] = useState({ top: 72, left: 16, width: 340, contentMaxHeight: 280 });
+    
+    // Obtener notificaciones actuales
+    const notifications = useNotifications(notificationNow);
+    const notificationSignature = useMemo(() => buildNotificationSignature(notifications), [notifications]);
+    const notificationCount = notifications.length;
+    const hasUnreadNotifications = notificationCount > 0 && notificationSignature !== viewedSignature;
 
     const updatePanelPosition = () => {
         const button = bellButtonRef.current;
@@ -66,6 +93,20 @@ export const AppTopBar = () => {
             return;
         }
 
+        try {
+            sessionStorage.setItem(VIEWED_NOTIFICATIONS_SIGNATURE_KEY, notificationSignature);
+        } catch {
+            // Ignorar errores de almacenamiento.
+        }
+
+        setViewedSignature(notificationSignature);
+    }, [isOpen, notificationSignature]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
         // Calcula posición tras el render para evitar forzar layout en el click.
         const rafId = window.requestAnimationFrame(() => {
             updatePanelPosition();
@@ -107,6 +148,13 @@ export const AppTopBar = () => {
                         aria-haspopup="menu"
                         aria-expanded={isOpen}
                         onClick={() => {
+                            const currentSignature = notificationSignature;
+                            setViewedSignature(currentSignature);
+                            try {
+                                sessionStorage.setItem(VIEWED_NOTIFICATIONS_SIGNATURE_KEY, currentSignature);
+                            } catch {
+                                // Ignorar errores de almacenamiento.
+                            }
                             setNotificationNow(Date.now());
                             setNotificationsEnabled(true);
                             setIsOpen((prev) => !prev);
@@ -117,6 +165,11 @@ export const AppTopBar = () => {
                             <path d="M6 10a6 6 0 1 1 12 0v4.5l1.2 2.2a1 1 0 0 1-.88 1.48H5.68a1 1 0 0 1-.88-1.48L6 14.5V10Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                             <path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                         </svg>
+                        {!isOpen && hasUnreadNotifications && (
+                            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ba1a1a] [font-family:'Inter-Bold',Helvetica] text-[11px] font-bold text-white">
+                                {notificationCount > 9 ? '9+' : notificationCount}
+                            </span>
+                        )}
                     </button>
 
                     {isOpen && notificationsEnabled && (
