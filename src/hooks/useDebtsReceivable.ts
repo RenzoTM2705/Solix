@@ -49,6 +49,16 @@ const fetchDebtsReceivableCached = (userId: string, force = false) => {
     return request;
 };
 
+const notifyAction = (message: string) => {
+    const payload = { message, timestamp: Date.now() };
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    sessionStorage.setItem("solix:last_action", JSON.stringify(payload));
+    window.dispatchEvent(new CustomEvent("solix:action", { detail: payload }));
+};
+
 export type AddDebtReceivableInput = Omit<CreateDebtReceivableInput, "user_id">;
 
 export const useDebtsReceivable = () => {
@@ -105,6 +115,11 @@ export const useDebtsReceivable = () => {
                     debtsReceivableCache.set(user.id, next);
                     return next;
                 });
+
+                notifyAction(`Se registró la deuda de ${created.nombre_persona} por ${created.monto.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}.`);
 
                 return created;
             } catch (err) {

@@ -9,6 +9,7 @@ const ConfigInicial = lazy(() => import("../screens/ConfigInicial").then((m) => 
 const CambiarClave = lazy(() => import("../screens/CambiarClave").then((m) => ({ default: m.CambiarClave })));
 const ConfirmacionClave = lazy(() => import("../screens/ConfirmacionClave").then((m) => ({ default: m.ConfirmacionClave })));
 const Dashboard = lazy(() => import("../screens/Dashboard").then((m) => ({ default: m.Dashboard })));
+const DeudasPorCobrar = lazy(() => import("../screens/DeudasPorCobrar").then((m) => ({ default: m.DeudasPorCobrar })));
 const GastosProgramados = lazy(() => import("../screens/GastosProgramados").then((m) => ({ default: m.GastosProgramados })));
 const Login = lazy(() => import("../screens/Login").then((m) => ({ default: m.Login })));
 const RecuperarClave = lazy(() => import("../screens/RecuperarClave").then((m) => ({ default: m.RecuperarClave })));
@@ -137,6 +138,14 @@ export const AppRoutes = () => (
                 element={(
                     <RequireConfiguredAuth>
                         <GastosProgramados />
+                    </RequireConfiguredAuth>
+                )}
+            />
+            <Route
+                path="/deudas-por-cobrar"
+                element={(
+                    <RequireConfiguredAuth>
+                        <DeudasPorCobrar />
                     </RequireConfiguredAuth>
                 )}
             />

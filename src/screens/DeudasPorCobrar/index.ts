@@ -1,0 +1,1 @@
+export { DeudasPorCobrar } from "./DeudasPorCobrar";

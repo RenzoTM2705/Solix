@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useProfile } from "./useProfile";
 import { useScheduledTransactions } from "./useScheduledTransactions";
+import { useDebtsReceivable } from "./useDebtsReceivable";
 import { useTransactions } from "./useTransactions";
 import { parseDateInPeru } from "../utils/peruDate";
 
@@ -37,6 +38,7 @@ const getStartOfWeek = (date: Date) => {
 export const useNotifications = (nowTimestamp: number) => {
     const { data: transactions } = useTransactions();
     const { data: scheduledTransactions } = useScheduledTransactions();
+    const { data: debtsReceivable } = useDebtsReceivable();
     const { profile } = useProfile();
 
     const notifications = useMemo(() => {
@@ -69,6 +71,29 @@ export const useNotifications = (nowTimestamp: number) => {
                 title: "Pago pendiente cercano",
                 detail: "Tienes un pago pendiente mañana.",
                 level: "high",
+            });
+        }
+
+        const pendingDebts = debtsReceivable.filter((item) => item.estado === "pendiente");
+        const paidDebts = debtsReceivable.filter((item) => item.estado === "pagado");
+
+        if (pendingDebts.length > 0) {
+            const totalPendingDebts = pendingDebts.reduce((sum, item) => sum + Number(item.monto || 0), 0);
+            items.push({
+                id: "debts-pending-summary",
+                title: "Deudas por cobrar pendientes",
+                detail: `Tienes ${pendingDebts.length} deuda(s) pendientes por ${formatCurrency(totalPendingDebts)}.`,
+                level: "medium",
+            });
+        }
+
+        if (paidDebts.length > 0) {
+            const totalPaidDebts = paidDebts.reduce((sum, item) => sum + Number(item.monto || 0), 0);
+            items.push({
+                id: "debts-paid-summary",
+                title: "Deudas por cobrar pagadas",
+                detail: `Has cobrado ${paidDebts.length} deuda(s) por ${formatCurrency(totalPaidDebts)}.`,
+                level: "info",
             });
         }
 
@@ -211,7 +236,7 @@ export const useNotifications = (nowTimestamp: number) => {
         }
 
         return items.slice(0, 8);
-    }, [nowTimestamp, profile?.monto_inicial, scheduledTransactions, transactions]);
+    }, [nowTimestamp, debtsReceivable, profile?.monto_inicial, scheduledTransactions, transactions]);
 
     return notifications;
 };

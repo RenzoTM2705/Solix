@@ -1,15 +1,17 @@
 // Vista principal del tablero financiero.
-import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
-import { AppTopBar } from "../../components/AppTopBar";
-import { useTransactions } from "../../hooks/useTransactions";
-import { useProfile } from "../../hooks/useProfile";
-import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { useMemo } from "react";
 import { Navigate } from "react-router-dom";
+import { AppTopBar } from "../../components/AppTopBar";
+import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
+import { useDebtsReceivable } from "../../hooks/useDebtsReceivable";
+import { useProfile } from "../../hooks/useProfile";
+import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
+import { useTransactions } from "../../hooks/useTransactions";
 
 export const Dashboard = () => {
-    const { data, loading } = useTransactions();
+    const { data } = useTransactions();
     const { data: scheduledData, loading: scheduledLoading } = useScheduledTransactions();
+    const { data: debtsReceivable, loading: debtsLoading } = useDebtsReceivable();
     const { profile, loading: profileLoading } = useProfile();
 
     const formatCurrency = (amount: number, withSign = false) => {
@@ -35,6 +37,10 @@ export const Dashboard = () => {
         gastosProgramadosPagados,
         gastosProgramadosPendientesCount,
         gastosProgramadosPagadosCount,
+        debtsReceivablePendientes,
+        debtsReceivablePagadas,
+        debtsReceivablePendientesCount,
+        debtsReceivablePagadasCount,
         balanceOperativo,
         capitalDisponible,
         capitalProyectado,
@@ -66,6 +72,11 @@ export const Dashboard = () => {
 
         const scheduledPendingCount = scheduledData.filter((item) => item.estado === "pendiente").length;
         const scheduledPaidCount = scheduledData.filter((item) => item.estado === "pagado").length;
+
+        const debtsPending = debtsReceivable.filter((item) => item.estado === "pendiente");
+        const debtsPaid = debtsReceivable.filter((item) => item.estado === "pagado");
+        const debtsPendingTotal = debtsPending.reduce((sum, item) => sum + Number(item.monto || 0), 0);
+        const debtsPaidTotal = debtsPaid.reduce((sum, item) => sum + Number(item.monto || 0), 0);
 
         const groupedByCategory = [
             ...data.filter((item) => item.tipo === "gasto").map((item) => ({
@@ -109,11 +120,11 @@ export const Dashboard = () => {
             { segments: [], accumulated: 0 },
         ).segments;
 
-        const gradient =
-            segments.length > 0 ? `conic-gradient(${segments.join(",")})` : "conic-gradient(#dbe4ff 0% 100%)";
+        const gradient = segments.length > 0 ? `conic-gradient(${segments.join(",")})` : "conic-gradient(#dbe4ff 0% 100%)";
 
         const operativo = totalIngresosValue - totalGastosValue;
-        const projectedCapital = montoInicialValue + operativo - scheduledPending;
+        const capitalDisponibleValue = montoInicialValue + operativo + debtsPaidTotal;
+        const projectedCapital = capitalDisponibleValue - scheduledPending;
 
         const highRiskThreshold = montoInicialValue > 0 ? montoInicialValue * 0.25 : 0;
         const mediumRiskThreshold = montoInicialValue > 0 ? montoInicialValue : 0;
@@ -121,17 +132,17 @@ export const Dashboard = () => {
         const financialHealth =
             projectedCapital < 0 || (operativo < 0 && projectedCapital <= highRiskThreshold)
                 ? {
-                    label: "Alto Riesgo",
-                    badgeClass: "bg-[#ffe2e0]",
-                    textClass: "text-[#b42318]",
-                }
+                      label: "Alto Riesgo",
+                      badgeClass: "bg-[#ffe2e0]",
+                      textClass: "text-[#b42318]",
+                  }
                 : operativo < 0 || projectedCapital < mediumRiskThreshold
-                    ? {
+                  ? {
                         label: "Riesgoso",
                         badgeClass: "bg-[#fff4d6]",
                         textClass: "text-[#8a5a00]",
                     }
-                    : {
+                  : {
                         label: "Saludable",
                         badgeClass: "bg-[#e2e7ff]",
                         textClass: "text-[#005236]",
@@ -147,15 +158,19 @@ export const Dashboard = () => {
             gastosProgramadosPagados: scheduledPaid,
             gastosProgramadosPendientesCount: scheduledPendingCount,
             gastosProgramadosPagadosCount: scheduledPaidCount,
+            debtsReceivablePendientes: debtsPendingTotal,
+            debtsReceivablePagadas: debtsPaidTotal,
+            debtsReceivablePendientesCount: debtsPending.length,
+            debtsReceivablePagadasCount: debtsPaid.length,
             balanceOperativo: operativo,
-            capitalDisponible: montoInicialValue + operativo,
+            capitalDisponible: capitalDisponibleValue,
             capitalProyectado: projectedCapital,
             categoriasGasto: categoriesWithMeta,
             totalGastoChart: chartTotal,
             chartGradient: gradient,
             financialHealth,
         };
-    }, [data, scheduledData, profile?.monto_inicial]);
+    }, [data, scheduledData, debtsReceivable, profile?.monto_inicial]);
 
     if (!profileLoading && (!profile || !profile.is_configured)) {
         return <Navigate to="/config-inicial" replace />;
@@ -170,7 +185,7 @@ export const Dashboard = () => {
                     <AppTopBar />
 
                     <section className="flex flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                        {(loading || scheduledLoading) && (
+                        {(scheduledLoading || debtsLoading) && (
                             <div className="h-6 [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold text-[#434654]">
                                 Cargando...
                             </div>
@@ -209,9 +224,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Capital inicial
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
-                                                Saldo al inicio del periodo
-                                            </p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">Saldo al inicio del periodo</p>
                                         </div>
                                         <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#131b2e] break-words">
                                             {formatCurrency(montoInicial)}
@@ -223,9 +236,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Ingresos instantáneos
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
-                                                Movimientos registrados al momento
-                                            </p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">Movimientos registrados al momento</p>
                                         </div>
                                         <div className="text-right">
                                             <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#006c49] break-words">
@@ -240,9 +251,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Gastos instantáneos
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
-                                                Salidas registradas al momento
-                                            </p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">Salidas registradas al momento</p>
                                         </div>
                                         <div className="text-right">
                                             <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#ba1a1a] break-words">
@@ -257,9 +266,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Por pagar programado
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
-                                                Pagos pendientes futuros
-                                            </p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">Pagos pendientes futuros</p>
                                         </div>
                                         <div className="text-right">
                                             <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#ba1a1a] break-words">
@@ -274,9 +281,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#434654]">
                                                 Programado pagado
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">
-                                                Pagos programados ya completados
-                                            </p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[#4b4e52]">Pagos programados ya completados</p>
                                         </div>
                                         <div className="text-right">
                                             <div className="[font-family:'Manrope-Bold',Helvetica] text-[22px] sm:text-[24px] font-bold leading-8 text-[#006c49] break-words">
@@ -291,9 +296,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-bold uppercase tracking-[1.2px] text-[#003d9b]">
                                                 Capital disponible actual
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(29,78,216,0.6)]">
-                                                Capital inicial + balance operativo
-                                            </p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(29,78,216,0.6)]">Capital inicial + balance operativo</p>
                                         </div>
                                         <div className="[font-family:'Manrope-Bold',Helvetica] text-[30px] sm:text-[30px] font-bold leading-9 text-[#003d9b] break-words">
                                             {formatCurrency(capitalDisponible)}
@@ -305,9 +308,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-bold uppercase tracking-[1.2px] text-[#ba1a1a]">
                                                 Capital proyectado
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(185,28,28,0.7)]">
-                                                Capital disponible - por pagar programado
-                                            </p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(185,28,28,0.7)]">Capital disponible - por pagar programado</p>
                                         </div>
                                         <div className="[font-family:'Manrope-Bold',Helvetica] text-[30px] sm:text-[30px] font-bold leading-9 text-[#ba1a1a] break-words">
                                             {formatCurrency(capitalProyectado)}
@@ -318,12 +319,8 @@ export const Dashboard = () => {
 
                             <div className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
                                 <div className="flex items-start justify-between gap-4">
-                                    <span className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
-                                        Desglose de Gastos
-                                    </span>
-                                    <span className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold leading-5 text-[#003d9b]">
-                                        {categoriasGasto.length}
-                                    </span>
+                                    <span className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">Desglose de Gastos</span>
+                                    <span className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold leading-5 text-[#003d9b]">{categoriasGasto.length}</span>
                                 </div>
 
                                 <div className="mt-8 flex min-h-[248px] flex-col items-center justify-center gap-6 rounded-[32px] bg-[#f8faff] p-4 sm:p-6 md:flex-row md:items-center md:justify-start md:gap-8 lg:gap-10 lg:p-8 overflow-hidden">
@@ -334,9 +331,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[30px] font-bold leading-9 text-[#131b2e]">
                                                 {Math.round(totalGastoChart).toLocaleString("en-US")}
                                             </div>
-                                            <div className="text-[10px] font-bold uppercase tracking-[1px] text-[#434654]">
-                                                Gastos tot.
-                                            </div>
+                                            <div className="text-[10px] font-bold uppercase tracking-[1px] text-[#434654]">Gastos tot.</div>
                                         </div>
                                     </div>
 
@@ -347,9 +342,7 @@ export const Dashboard = () => {
                                             categoriasGasto.map((item) => (
                                                 <div key={item.categoria} className="flex items-center justify-between gap-3">
                                                     <div className="min-w-0">
-                                                        <div className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold text-[#131b2e] truncate">
-                                                            {item.categoria}
-                                                        </div>
+                                                        <div className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold text-[#131b2e] truncate">{item.categoria}</div>
                                                         <div className="text-[12px] text-[#434654]">
                                                             {item.percentage.toFixed(1)}% • {formatCurrency(item.monto)}
                                                         </div>
@@ -366,16 +359,12 @@ export const Dashboard = () => {
                                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#006c49]">
                                             <path d="M4 12h16M12 4l8 8-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                        <span className="[font-family:'Inter-SemiBold',Helvetica] text-[10px] font-bold uppercase tracking-[1px] text-[#006c49]">
-                                            Balance operativo
-                                        </span>
+                                        <span className="[font-family:'Inter-SemiBold',Helvetica] text-[10px] font-bold uppercase tracking-[1px] text-[#006c49]">Balance operativo</span>
                                     </div>
                                     <div className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
                                         {formatCurrency(balanceOperativo, true)}
                                     </div>
-                                    <p className="text-[10px] leading-[15px] text-[#434654]">
-                                        Resultado mensual de ingresos menos gastos.
-                                    </p>
+                                    <p className="text-[10px] leading-[15px] text-[#434654]">Resultado mensual de ingresos menos gastos.</p>
                                 </div>
 
                                 <div className="mt-4 space-y-4 rounded-[32px] bg-[#f2f3ff] p-5 border border-[rgba(255,255,255,0.5)]">
@@ -383,17 +372,43 @@ export const Dashboard = () => {
                                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#ba1a1a]">
                                             <path d="M20 12H4m8-8-8 8 8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                        <span className="[font-family:'Inter-SemiBold',Helvetica] text-[10px] font-bold uppercase tracking-[1px] text-[#ba1a1a]">
-                                            Carga de gastos
-                                        </span>
+                                        <span className="[font-family:'Inter-SemiBold',Helvetica] text-[10px] font-bold uppercase tracking-[1px] text-[#ba1a1a]">Carga de gastos</span>
                                     </div>
                                     <div className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
                                         {totalIngresos > 0 ? `${((totalGastos / totalIngresos) * 100).toFixed(1)}%` : "0.0%"}
                                     </div>
-                                    <p className="text-[10px] leading-[15px] text-[#434654]">
-                                        Proporción de gastos frente a ingresos.
-                                    </p>
+                                    <p className="text-[10px] leading-[15px] text-[#434654]">Proporción de gastos frente a ingresos.</p>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="rounded-[32px] bg-white p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <span className="[font-family:'Manrope-Bold',Helvetica] text-[20px] font-bold leading-7 text-[#131b2e]">
+                                        Deudas por Cobrar
+                                    </span>
+                                    <p className="mt-1 text-[14px] leading-5 text-[#434654]">Resumen de deudas pendientes y pagadas.</p>
+                                </div>
+                                <span className="[font-family:'Inter-SemiBold',Helvetica] text-[14px] font-bold leading-5 text-[#003d9b]">{debtsReceivable.length}</span>
+                            </div>
+
+                            <div className="mt-8 grid gap-4 md:grid-cols-2">
+                                <article className="rounded-[28px] bg-[#fff8f8] p-5 border border-[rgba(186,26,26,0.08)]">
+                                    <p className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#ba1a1a]">Pendientes</p>
+                                    <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#ba1a1a]">
+                                        {formatCurrency(debtsReceivablePendientes)}
+                                    </p>
+                                    <p className="mt-1 text-[14px] leading-5 text-[#434654]">{debtsReceivablePendientesCount} deuda(s) por cobrar</p>
+                                </article>
+
+                                <article className="rounded-[28px] bg-[#f3fbf7] p-5 border border-[rgba(0,108,73,0.08)]">
+                                    <p className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-semibold uppercase tracking-[1.2px] text-[#006c49]">Pagadas</p>
+                                    <p className="mt-3 [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#006c49]">
+                                        {formatCurrency(debtsReceivablePagadas)}
+                                    </p>
+                                    <p className="mt-1 text-[14px] leading-5 text-[#434654]">{debtsReceivablePagadasCount} deuda(s) cobradas</p>
+                                </article>
                             </div>
                         </div>
                     </section>
