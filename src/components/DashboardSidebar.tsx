@@ -6,6 +6,7 @@ export const DashboardSidebar = () => {
         { label: "Tablero", icon: "dashboard", to: "/dashboard" },
         { label: "Registros", icon: "registros", to: "/registros" },
         { label: "Programados", icon: "calendar", to: "/gastos-programados" },
+        { label: "Deudas por cobrar", icon: "wallet", to: "/deudas-por-cobrar" },
     ];
 
     const navItemBaseClass =
@@ -63,6 +64,14 @@ export const DashboardSidebar = () => {
                                     <path d="M7 2v3M17 2v3M3.5 9h17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                                     <rect x="3.5" y="5" width="17" height="15.5" rx="3" stroke="currentColor" strokeWidth="2" />
                                     <path d="M7.5 12h4M7.5 16h4M13.5 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                            )}
+                            {icon === "wallet" && (
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[18px] w-[18px]">
+                                    <rect x="3" y="6" width="18" height="12" rx="3" stroke="currentColor" strokeWidth="2" />
+                                    <path d="M16 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                    <circle cx="15" cy="12" r="1" fill="currentColor" />
+                                    <path d="M6 6V5a2 2 0 0 1 2-2h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                                 </svg>
                             )}
                         </div>
