@@ -123,8 +123,8 @@ export const Dashboard = () => {
         const gradient = segments.length > 0 ? `conic-gradient(${segments.join(",")})` : "conic-gradient(#dbe4ff 0% 100%)";
 
         const operativo = totalIngresosValue - totalGastosValue;
-        const capitalDisponibleValue = montoInicialValue + operativo + debtsPaidTotal;
-        const projectedCapital = capitalDisponibleValue - scheduledPending;
+        const capitalDisponibleValue = montoInicialValue + operativo + debtsPaidTotal - debtsPendingTotal;
+        const projectedCapital = capitalDisponibleValue - scheduledPending + debtsPendingTotal;
 
         const highRiskThreshold = montoInicialValue > 0 ? montoInicialValue * 0.25 : 0;
         const mediumRiskThreshold = montoInicialValue > 0 ? montoInicialValue : 0;
@@ -296,7 +296,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-bold uppercase tracking-[1.2px] text-[#003d9b]">
                                                 Capital disponible actual
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(29,78,216,0.6)]">Capital inicial + balance operativo</p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(29,78,216,0.6)]">Capital inicial + balance operativo - deudas pendientes</p>
                                         </div>
                                         <div className="[font-family:'Manrope-Bold',Helvetica] text-[30px] sm:text-[30px] font-bold leading-9 text-[#003d9b] break-words">
                                             {formatCurrency(capitalDisponible)}
@@ -308,7 +308,7 @@ export const Dashboard = () => {
                                             <div className="[font-family:'Inter-SemiBold',Helvetica] text-[12px] font-bold uppercase tracking-[1.2px] text-[#ba1a1a]">
                                                 Capital proyectado
                                             </div>
-                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(185,28,28,0.7)]">Capital disponible - por pagar programado</p>
+                                            <p className="mt-1 text-[14px] leading-5 text-[rgba(185,28,28,0.7)]">Capital disponible actual + deudas pendientes - por pagar programado</p>
                                         </div>
                                         <div className="[font-family:'Manrope-Bold',Helvetica] text-[30px] sm:text-[30px] font-bold leading-9 text-[#ba1a1a] break-words">
                                             {formatCurrency(capitalProyectado)}
