@@ -123,8 +123,15 @@ export const Dashboard = () => {
         const gradient = segments.length > 0 ? `conic-gradient(${segments.join(",")})` : "conic-gradient(#dbe4ff 0% 100%)";
 
         const operativo = totalIngresosValue - totalGastosValue;
-        const capitalDisponibleValue = montoInicialValue + operativo + debtsPaidTotal - debtsPendingTotal;
-        const projectedCapital = capitalDisponibleValue - scheduledPending + debtsPendingTotal;
+
+        // Evitar doble conteo: los pagos de deudas deberían registrarse como
+        // transacciones (ingresos) y ya están incluidos en `operativo`.
+        // Por eso sólo restamos las deudas pendientes (no restar y sumar las pagadas).
+        const capitalDisponibleValue = montoInicialValue + operativo - debtsPendingTotal;
+
+        // Capital proyectado = capital disponible actual + deudas pendientes - pagos programados pendientes.
+        // Así mostramos el capital que proyectarías si las deudas pendientes se convirtieran en ingreso.
+        const projectedCapital = capitalDisponibleValue + debtsPendingTotal - scheduledPending;
 
         const highRiskThreshold = montoInicialValue > 0 ? montoInicialValue * 0.25 : 0;
         const mediumRiskThreshold = montoInicialValue > 0 ? montoInicialValue : 0;

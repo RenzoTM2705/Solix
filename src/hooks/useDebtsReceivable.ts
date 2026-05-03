@@ -142,11 +142,20 @@ export const useDebtsReceivable = () => {
             try {
                 const updated = await updateDebtReceivableService(id, user.id, { estado });
 
-                setData((prev) => {
-                    const next = prev.map((item) => (item.id === id ? updated : item));
-                    debtsReceivableCache.set(user.id, next);
-                    return next;
-                });
+                // Refresh desde el servidor para mantener una única fuente de verdad.
+                // Evita inconsistencias y duplicados si hay triggers o procesos externos
+                // que también modifican datos relacionados (p. ej. inserción de transacción).
+                try {
+                    const refreshed = await fetchDebtsReceivableCached(user.id, true);
+                    setData(refreshed);
+                } catch (refreshErr) {
+                    // Fallback: aplicar el cambio localmente si el refresh falla.
+                    setData((prev) => {
+                        const next = prev.map((item) => (item.id === id ? updated : item));
+                        debtsReceivableCache.set(user.id, next);
+                        return next;
+                    });
+                }
 
                 return updated;
             } catch (err) {
