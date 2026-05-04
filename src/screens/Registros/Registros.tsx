@@ -6,7 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useTransactions } from "../../hooks/useTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { Transaction, TransactionType } from "../../types/transaction";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { RegistrosFilters } from "../../utils/registrosFilters";
 import { INITIAL_REGISTROS_FILTERS, filterTransactions } from "../../utils/registrosFilters";
 import { formatDateInPeru, getPeruCalendarDate } from "../../utils/peruDate";
@@ -320,15 +320,15 @@ export const Registros = () => {
         return new Date(createdAt.getFullYear(), createdAt.getMonth(), 1, 0, 0, 0);
     }, [user?.created_at]);
 
-    const clampMonth = (month: Date) => {
+    const clampMonth = useCallback((month: Date) => {
         if (!minAllowedMonth) {
             return month;
         }
 
         return month.getTime() < minAllowedMonth.getTime() ? minAllowedMonth : month;
-    };
+    }, [minAllowedMonth]);
 
-    const safeCurrentMonth = useMemo(() => clampMonth(currentMonth), [currentMonth, minAllowedMonth]);
+    const safeCurrentMonth = useMemo(() => clampMonth(currentMonth), [currentMonth, clampMonth]);
 
     const filteredData = useMemo(() => {
         return filterTransactions(data, filters);
@@ -349,6 +349,8 @@ export const Registros = () => {
             balance: ingresos - gastos,
         };
     }, [filteredData]);
+
+    const balanceColorClass = totals.balance >= 0 ? "text-[#006c49]" : "text-[#ba1a1a]";
 
     const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
 
@@ -614,8 +616,8 @@ export const Registros = () => {
                                 </span>
                             </div>
                             <div className="flex flex-col items-start self-stretch shrink-0 flex-nowrap relative z-[77]">
-                                <span className="h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 text-[#003d9b] relative text-left whitespace-nowrap z-[78]">
-                                    {formatCurrency(totals.balance)}
+                                <span className={`h-[36px] self-stretch shrink-0 basis-auto [font-family:'Manrope-Bold',Helvetica] text-[32px] font-bold leading-9 relative text-left whitespace-nowrap z-[78] ${balanceColorClass}`}>
+                                    {formatCurrency(Math.abs(totals.balance))}
                                 </span>
                             </div>
                         </div>
