@@ -283,6 +283,12 @@ export const GastosProgramados = () => {
         });
     };
 
+    const handleResetFilters = () => {
+        setFilters(INITIAL_GASTOS_FILTERS);
+        setCurrentPage(1);
+        setCurrentMonth(clampMonth(new Date()));
+    };
+
     const filteredData = useMemo(() => {
         return filterScheduledTransactions(data, filters);
     }, [data, filters]);
@@ -719,6 +725,7 @@ export const GastosProgramados = () => {
                                 <FilterPanelGastos 
                                     filters={filters} 
                                     onFiltersChange={setFilters}
+                                    onResetFilters={handleResetFilters}
                                     isOpen={showFilterPanel}
                                     onClose={() => setShowFilterPanel(false)}
                                 />

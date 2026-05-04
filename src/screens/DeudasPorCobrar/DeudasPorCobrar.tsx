@@ -1,5 +1,5 @@
 // Vista de deudas por cobrar con resumen, filtros, exportación y acciones de estado.
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { AppTopBar } from "../../components/AppTopBar";
 import { DashboardSidebar } from "../../components/DashboardSidebar";
 import { useAuth } from "../../hooks/useAuth";
@@ -214,13 +214,13 @@ export const DeudasPorCobrar = () => {
         return new Date(createdAt.getFullYear(), createdAt.getMonth(), 1, 0, 0, 0);
     }, [user?.created_at]);
 
-    const clampMonth = (month: Date) => {
+    const clampMonth = useCallback((month: Date) => {
         if (!minAllowedMonth) {
             return month;
         }
 
         return month.getTime() < minAllowedMonth.getTime() ? minAllowedMonth : month;
-    };
+    }, [minAllowedMonth]);
 
     const changeMonth = (delta: number) => {
         setCurrentMonth((prev) => {
@@ -233,6 +233,12 @@ export const DeudasPorCobrar = () => {
             setFilters((prevFilters) => ({ ...prevFilters, dateStart: nextStart, dateEnd: nextEnd }));
             return nextMonth;
         });
+    };
+
+    const handleResetFilters = () => {
+        setFilters(INITIAL_FILTERS);
+        setCurrentMonth(clampMonth(new Date()));
+        setShowFilterPanel(false);
     };
 
     // Centrar el selector en el mes donde exista al menos un registro cuando
@@ -304,7 +310,7 @@ export const DeudasPorCobrar = () => {
         return currentMonth;
     }, [filters.dateStart, filteredData, currentMonth]);
 
-    const safeDisplayMonth = useMemo(() => clampMonth(displayMonth), [displayMonth, minAllowedMonth]);
+    const safeDisplayMonth = useMemo(() => clampMonth(displayMonth), [displayMonth, clampMonth]);
 
     const totals = useMemo(() => {
         const totalPendiente = filteredData
@@ -589,17 +595,15 @@ export const DeudasPorCobrar = () => {
                                                 <p className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-bold uppercase tracking-[0.7px] text-[#434654]">
                                                     Filtros
                                                 </p>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setFilters(INITIAL_FILTERS);
-                                                        setShowFilterPanel(false);
-                                                    }}
-                                                    className="[font-family:'Inter-Regular',Helvetica] text-[12px] font-semibold text-[#0052cc]"
-                                                >
-                                                    Limpiar
-                                                </button>
                                             </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={handleResetFilters}
+                                                className="mt-3 rounded-full border border-[rgba(195,198,214,0.5)] px-3 py-2 text-xs font-semibold text-[#434654] hover:bg-[#f2f3ff]"
+                                            >
+                                                Reiniciar filtros
+                                            </button>
 
                                             <div className="mt-3 grid gap-3">
                                                 <label className="flex flex-col gap-1">

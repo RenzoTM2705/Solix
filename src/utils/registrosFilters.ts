@@ -7,6 +7,7 @@ export interface RegistrosFilters {
     dateStart?: Date;
     dateEnd?: Date;
     type: "all" | "ingreso" | "gasto";
+    categoria?: string;
     amountFilter: "all" | "under50" | "over100" | "custom";
     amountMin?: number;
     amountMax?: number;
@@ -46,6 +47,8 @@ const getDateRange = (range: "today" | "last7" | "thisMonth" | "custom", customS
 };
 
 export const filterTransactions = (transactions: Transaction[], filters: RegistrosFilters): Transaction[] => {
+    const categoria = filters.categoria?.trim().toLowerCase() || "";
+
     return transactions.filter((transaction) => {
         // Filtro de fecha
         const { startDate, endDate } = getDateRange(
@@ -60,6 +63,10 @@ export const filterTransactions = (transactions: Transaction[], filters: Registr
 
         // Filtro de tipo
         if (filters.type !== "all" && transaction.tipo !== filters.type) {
+            return false;
+        }
+
+        if (categoria && !transaction.categoria.toLowerCase().includes(categoria)) {
             return false;
         }
 
