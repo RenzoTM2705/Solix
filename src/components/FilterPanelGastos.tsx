@@ -4,6 +4,7 @@ import type { GastosFilters } from "../utils/gastosFilters";
 interface FilterPanelGastosProps {
     filters: GastosFilters;
     onFiltersChange: (filters: GastosFilters) => void;
+    onResetFilters?: () => void;
     isOpen?: boolean;
     onClose?: () => void;
 }
@@ -11,6 +12,7 @@ interface FilterPanelGastosProps {
 export const FilterPanelGastos = ({
     filters,
     onFiltersChange,
+    onResetFilters,
     isOpen = false,
     onClose,
 }: FilterPanelGastosProps) => {
@@ -22,11 +24,30 @@ export const FilterPanelGastos = ({
     };
 
     const handleDateRangeChange = (range: GastosFilters["dateRange"]) => {
-        onFiltersChange({ ...filters, dateRange: range });
+        if (range === "all") {
+            onFiltersChange({
+                ...filters,
+                dateRange: range,
+                dateStart: undefined,
+                dateEnd: undefined,
+            });
+            return;
+        }
+
+        onFiltersChange({
+            ...filters,
+            dateRange: range,
+            dateStart: undefined,
+            dateEnd: undefined,
+        });
     };
 
     const handleAmountFilterChange = (filter: GastosFilters["amountFilter"]) => {
         onFiltersChange({ ...filters, amountFilter: filter });
+    };
+
+    const handleCategoryChange = (value: string) => {
+        onFiltersChange({ ...filters, categoria: value });
     };
 
     const handleCustomAmountApply = () => {
@@ -38,6 +59,12 @@ export const FilterPanelGastos = ({
                 amountMax: Number(customAmountMax),
             });
         }
+    };
+
+    const handleResetFilters = () => {
+        setCustomAmountMin("");
+        setCustomAmountMax("");
+        onResetFilters?.();
     };
 
     if (!isOpen) return null;
@@ -58,6 +85,14 @@ export const FilterPanelGastos = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex flex-col gap-4 p-6 max-h-[75vh] overflow-y-auto">
+                    <button
+                        type="button"
+                        onClick={handleResetFilters}
+                        className="self-end rounded-full border border-[rgba(195,198,214,0.5)] px-3 py-2 text-xs font-semibold text-[#434654] hover:bg-[#f2f3ff]"
+                    >
+                        Reiniciar filtros
+                    </button>
+
                     {/* Estado - OBLIGATORIO */}
                     <div className="flex flex-col gap-3">
                         <label className="font-semibold text-[#131b2e] flex items-center gap-2 text-sm">
@@ -108,6 +143,20 @@ export const FilterPanelGastos = ({
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    {/* Monto */}
+                    <div className="flex flex-col gap-3">
+                        <label className="font-semibold text-[#131b2e] flex items-center gap-2 text-sm">
+                            Categoría
+                        </label>
+                        <input
+                            type="text"
+                            value={filters.categoria || ""}
+                            onChange={(e) => handleCategoryChange(e.target.value)}
+                            placeholder="Buscar por categoría"
+                            className="px-3 py-2 rounded-full border border-[#c3c6d64d] text-sm"
+                        />
                     </div>
 
                     {/* Monto */}

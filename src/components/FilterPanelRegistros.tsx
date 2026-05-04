@@ -4,6 +4,7 @@ import type { RegistrosFilters } from "../utils/registrosFilters";
 interface FilterPanelRegistrosProps {
     filters: RegistrosFilters;
     onFiltersChange: (filters: RegistrosFilters) => void;
+    onResetFilters?: () => void;
     isOpen?: boolean;
     onClose?: () => void;
 }
@@ -11,6 +12,7 @@ interface FilterPanelRegistrosProps {
 export const FilterPanelRegistros = ({
     filters,
     onFiltersChange,
+    onResetFilters,
     isOpen = false,
     onClose,
 }: FilterPanelRegistrosProps) => {
@@ -20,7 +22,17 @@ export const FilterPanelRegistros = ({
     const [customAmountMax, setCustomAmountMax] = useState("");
 
     const handleDateRangeChange = (range: RegistrosFilters["dateRange"]) => {
-        onFiltersChange({ ...filters, dateRange: range });
+        if (range === "custom") {
+            onFiltersChange({ ...filters, dateRange: range });
+            return;
+        }
+
+        onFiltersChange({
+            ...filters,
+            dateRange: range,
+            dateStart: undefined,
+            dateEnd: undefined,
+        });
     };
 
     const handleTypeChange = (type: RegistrosFilters["type"]) => {
@@ -29,6 +41,10 @@ export const FilterPanelRegistros = ({
 
     const handleAmountFilterChange = (filter: RegistrosFilters["amountFilter"]) => {
         onFiltersChange({ ...filters, amountFilter: filter });
+    };
+
+    const handleCategoryChange = (value: string) => {
+        onFiltersChange({ ...filters, categoria: value });
     };
 
     const handleCustomDateApply = () => {
@@ -51,6 +67,14 @@ export const FilterPanelRegistros = ({
         });
     };
 
+    const handleResetFilters = () => {
+        setCustomDateStart("");
+        setCustomDateEnd("");
+        setCustomAmountMin("");
+        setCustomAmountMax("");
+        onResetFilters?.();
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -69,6 +93,14 @@ export const FilterPanelRegistros = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex flex-col gap-4 p-6 max-h-[75vh] overflow-y-auto">
+                    <button
+                        type="button"
+                        onClick={handleResetFilters}
+                        className="self-end rounded-full border border-[rgba(195,198,214,0.5)] px-3 py-2 text-xs font-semibold text-[#434654] hover:bg-[#f2f3ff]"
+                    >
+                        Reiniciar filtros
+                    </button>
+
                     {/* FECHA */}
                     <div className="flex flex-col gap-3">
                         <label className="font-semibold text-[#131b2e] text-sm">
@@ -151,6 +183,20 @@ export const FilterPanelRegistros = ({
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    {/* CATEGORÍA */}
+                    <div className="flex flex-col gap-3">
+                        <label className="font-semibold text-[#131b2e] text-sm">
+                            Categoría
+                        </label>
+                        <input
+                            type="text"
+                            value={filters.categoria || ""}
+                            onChange={(e) => handleCategoryChange(e.target.value)}
+                            placeholder="Buscar por categoría"
+                            className="px-3 py-2 rounded-full border border-[#c3c6d64d] text-sm outline-none"
+                        />
                     </div>
 
                     {/* MONTO */}

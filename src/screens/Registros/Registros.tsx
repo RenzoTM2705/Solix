@@ -396,6 +396,12 @@ export const Registros = () => {
         setModalOpen(true);
     };
 
+    const handleResetFilters = () => {
+        setFilters(INITIAL_REGISTROS_FILTERS);
+        setCurrentPage(1);
+        setCurrentMonth(clampMonth(new Date()));
+    };
+
     const changeMonth = (delta: number) => {
         setCurrentPage(1);
         setCurrentMonth((prev) => {
@@ -702,6 +708,7 @@ export const Registros = () => {
                                 <FilterPanelRegistros 
                                     filters={filters} 
                                     onFiltersChange={setFilters}
+                                    onResetFilters={handleResetFilters}
                                     isOpen={showFilterPanel}
                                     onClose={() => setShowFilterPanel(false)}
                                 />

@@ -7,6 +7,7 @@ export interface GastosFilters {
     dateRange: "today" | "thisWeek" | "overdue" | "next7" | "all";
     dateStart?: Date;
     dateEnd?: Date;
+    categoria?: string;
     amountFilter: "all" | "high" | "low" | "custom";
     amountMin?: number;
     amountMax?: number;
@@ -69,16 +70,30 @@ export const filterScheduledTransactions = (
     transactions: ScheduledTransaction[],
     filters: GastosFilters
 ): ScheduledTransaction[] => {
+    const categoria = filters.categoria?.trim().toLowerCase() || "";
+
     return transactions.filter((transaction) => {
         // Filtro de estado
         if (filters.estado !== "all" && transaction.estado !== filters.estado) {
             return false;
         }
 
+        if (categoria && !transaction.categoria.toLowerCase().includes(categoria)) {
+            return false;
+        }
+
         // Filtro de fecha programada
         let startDate: Date;
         let endDate: Date;
-        if (filters.dateStart) {
+        if (filters.dateRange === "all") {
+            const range = getDateRangeForScheduled("all");
+            startDate = range.startDate;
+            endDate = range.endDate;
+        } else if (filters.dateRange === "today" || filters.dateRange === "thisWeek" || filters.dateRange === "overdue" || filters.dateRange === "next7") {
+            const range = getDateRangeForScheduled(filters.dateRange);
+            startDate = range.startDate;
+            endDate = range.endDate;
+        } else if (filters.dateStart) {
             startDate = filters.dateStart;
             endDate = filters.dateEnd || new Date(filters.dateStart.getFullYear(), filters.dateStart.getMonth() + 1, 0, 23, 59, 59);
         } else {
