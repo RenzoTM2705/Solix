@@ -5,6 +5,8 @@ import { parseDateInPeru } from "./peruDate";
 export interface GastosFilters {
     estado: "all" | "pendiente" | "pagado";
     dateRange: "today" | "thisWeek" | "overdue" | "next7" | "all";
+    dateStart?: Date;
+    dateEnd?: Date;
     amountFilter: "all" | "high" | "low" | "custom";
     amountMin?: number;
     amountMax?: number;
@@ -74,7 +76,16 @@ export const filterScheduledTransactions = (
         }
 
         // Filtro de fecha programada
-        const { startDate, endDate } = getDateRangeForScheduled(filters.dateRange);
+        let startDate: Date;
+        let endDate: Date;
+        if (filters.dateStart) {
+            startDate = filters.dateStart;
+            endDate = filters.dateEnd || new Date(filters.dateStart.getFullYear(), filters.dateStart.getMonth() + 1, 0, 23, 59, 59);
+        } else {
+            const range = getDateRangeForScheduled(filters.dateRange);
+            startDate = range.startDate;
+            endDate = range.endDate;
+        }
         const txDate = parseDateInPeru(transaction.fecha_programada);
         if (!txDate || txDate < startDate || txDate > endDate) {
             return false;

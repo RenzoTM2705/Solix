@@ -2,6 +2,7 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
 import { AppTopBar } from "../../components/AppTopBar";
 import { FilterPanelRegistros } from "../../components/FilterPanelRegistros";
+import { useAuth } from "../../hooks/useAuth";
 import { useTransactions } from "../../hooks/useTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { Transaction, TransactionType } from "../../types/transaction";
@@ -292,6 +293,7 @@ const TransactionRow = ({
 
 // Gestiona el listado, filtros, paginación y edición de transacciones.
 export const Registros = () => {
+    const { user } = useAuth();
     const { data, loading, error, addTransaction, editTransaction, deleteTransaction } = useTransactions();
     const [actionError, setActionError] = useState("");
     const [modalOpen, setModalOpen] = useState(false);
@@ -300,9 +302,33 @@ export const Registros = () => {
     const [form, setForm] = useState<TransactionFormState>(INITIAL_TRANSACTION_FORM);
     const [submittingForm, setSubmittingForm] = useState(false);
     const [filters, setFilters] = useState<RegistrosFilters>(INITIAL_REGISTROS_FILTERS);
+    const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
     const [currentPage, setCurrentPage] = useState(1);
     const [showFilterPanel, setShowFilterPanel] = useState(false);
     const pageSize = 4;
+
+    const minAllowedMonth = useMemo(() => {
+        if (!user?.created_at) {
+            return null;
+        }
+
+        const createdAt = new Date(user.created_at);
+        if (Number.isNaN(createdAt.getTime())) {
+            return null;
+        }
+
+        return new Date(createdAt.getFullYear(), createdAt.getMonth(), 1, 0, 0, 0);
+    }, [user?.created_at]);
+
+    const clampMonth = (month: Date) => {
+        if (!minAllowedMonth) {
+            return month;
+        }
+
+        return month.getTime() < minAllowedMonth.getTime() ? minAllowedMonth : month;
+    };
+
+    const safeCurrentMonth = useMemo(() => clampMonth(currentMonth), [currentMonth, minAllowedMonth]);
 
     const filteredData = useMemo(() => {
         return filterTransactions(data, filters);
@@ -366,6 +392,21 @@ export const Registros = () => {
         setActiveTransaction(null);
         setForm(INITIAL_TRANSACTION_FORM);
         setModalOpen(true);
+    };
+
+    const changeMonth = (delta: number) => {
+        setCurrentPage(1);
+        setCurrentMonth((prev) => {
+            const firstDate = data && data.length > 0 && data[0].fecha ? new Date(data[0].fecha + "T00:00:00") : null;
+            const base = filters.dateStart || firstDate || prev;
+            const d = new Date(base.getFullYear(), base.getMonth() + delta, 1);
+            // set filters to that month
+            const nextMonth = clampMonth(d);
+            const start = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1, 0, 0, 0);
+            const end = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0, 23, 59, 59);
+            setFilters((prevFilters) => ({ ...prevFilters, dateRange: "custom", dateStart: start, dateEnd: end }));
+            return nextMonth;
+        });
     };
 
     // Carga los datos del registro seleccionado para editarlo.
@@ -611,6 +652,26 @@ export const Registros = () => {
                                 </span>
                             </div>
                             <div className="relative z-[301] ml-auto flex w-full shrink-0 flex-nowrap items-center justify-end gap-[16px] sm:w-auto">
+                                <div className="flex items-center gap-2 mr-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => changeMonth(-1)}
+                                        disabled={Boolean(minAllowedMonth && safeCurrentMonth.getTime() <= minAllowedMonth.getTime())}
+                                        className="rounded-full border border-[rgba(195,198,214,0.3)] px-3 py-2 hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        &lsaquo;
+                                    </button>
+                                    <div className="px-3 py-2 rounded-full bg-[#f2f3ff] text-sm font-semibold">
+                                            {safeCurrentMonth.toLocaleString("es-PE", { month: "long", year: "numeric" })}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => changeMonth(1)}
+                                        className="rounded-full border border-[rgba(195,198,214,0.3)] px-3 py-2 hover:bg-[#f2f3ff]"
+                                    >
+                                        &rsaquo;
+                                    </button>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={() => setShowFilterPanel(!showFilterPanel)}

@@ -1,7 +1,8 @@
 // Vista de deudas por cobrar con resumen, filtros, exportación y acciones de estado.
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { AppTopBar } from "../../components/AppTopBar";
 import { DashboardSidebar } from "../../components/DashboardSidebar";
+import { useAuth } from "../../hooks/useAuth";
 import { useDebtsReceivable } from "../../hooks/useDebtsReceivable";
 import type { DebtReceivableStatus } from "../../types/debtReceivable";
 
@@ -49,6 +50,8 @@ type DebtFormState = {
 type DebtFiltersState = {
     persona: string;
     estado: "todos" | DebtReceivableStatus;
+    dateStart?: Date;
+    dateEnd?: Date;
 };
 
 const INITIAL_DEBT_FORM: DebtFormState = {
@@ -179,6 +182,7 @@ const DebtModal = ({
 };
 
 export const DeudasPorCobrar = () => {
+    const { user } = useAuth();
     const {
         data,
         loading,
@@ -194,7 +198,73 @@ export const DeudasPorCobrar = () => {
     const [form, setForm] = useState<DebtFormState>(INITIAL_DEBT_FORM);
     const [filters, setFilters] = useState<DebtFiltersState>(INITIAL_FILTERS);
     const [showFilterPanel, setShowFilterPanel] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
     const [submitting, setSubmitting] = useState(false);
+
+    const minAllowedMonth = useMemo(() => {
+        if (!user?.created_at) {
+            return null;
+        }
+
+        const createdAt = new Date(user.created_at);
+        if (Number.isNaN(createdAt.getTime())) {
+            return null;
+        }
+
+        return new Date(createdAt.getFullYear(), createdAt.getMonth(), 1, 0, 0, 0);
+    }, [user?.created_at]);
+
+    const clampMonth = (month: Date) => {
+        if (!minAllowedMonth) {
+            return month;
+        }
+
+        return month.getTime() < minAllowedMonth.getTime() ? minAllowedMonth : month;
+    };
+
+    const changeMonth = (delta: number) => {
+        setCurrentMonth((prev) => {
+            const firstDate = data && data.length > 0 && data[0].fecha_prestamo ? new Date(data[0].fecha_prestamo + "T00:00:00") : null;
+            const base = (filters.dateStart as Date) || firstDate || prev;
+            const d = new Date(base.getFullYear(), base.getMonth() + delta, 1);
+            const nextMonth = clampMonth(d);
+            const nextStart = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1, 0, 0, 0);
+            const nextEnd = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0, 23, 59, 59);
+            setFilters((prevFilters) => ({ ...prevFilters, dateStart: nextStart, dateEnd: nextEnd }));
+            return nextMonth;
+        });
+    };
+
+    // Centrar el selector en el mes donde exista al menos un registro cuando
+    // no se haya aplicado un filtro de fecha explícito.
+    const initializedRef = useRef(false);
+    useEffect(() => {
+        if (initializedRef.current) return;
+        if (!data || data.length === 0) {
+            initializedRef.current = true;
+            return;
+        }
+
+        // Si el usuario ya definió un rango (dateStart), no sobreescribimos.
+        if (filters.dateStart) {
+            initializedRef.current = true;
+            return;
+        }
+
+        // Supongamos que `data` viene ordenada por fecha desc; tomar el primero.
+        const first = data[0];
+        if (!first || !first.fecha_prestamo) {
+            initializedRef.current = true;
+            return;
+        }
+
+        const d = new Date(first.fecha_prestamo + "T00:00:00");
+        const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0);
+        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+        setCurrentMonth(start);
+        setFilters((prev) => ({ ...prev, dateStart: start, dateEnd: end }));
+        initializedRef.current = true;
+    }, [data, filters.dateStart]);
 
     const filteredData = useMemo(() => {
         const persona = filters.persona.trim().toLowerCase();
@@ -202,9 +272,39 @@ export const DeudasPorCobrar = () => {
         return data.filter((item) => {
             const matchPersona = persona ? item.nombre_persona.toLowerCase().includes(persona) : true;
             const matchEstado = filters.estado === "todos" ? true : item.estado === filters.estado;
-            return matchPersona && matchEstado;
+
+            if (!matchPersona || !matchEstado) return false;
+
+            if (filters.dateStart) {
+                const txDate = new Date(item.fecha_prestamo + "T00:00:00");
+                const start = filters.dateStart;
+                const end = filters.dateEnd || new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59);
+                if (!txDate || txDate < start || txDate > end) return false;
+            }
+
+            return true;
         });
     }, [data, filters]);
+
+    // Mostrar el mes correcto en la cabecera:
+    // - Si hay un filtro de fecha explícito (`dateStart`) usarlo.
+    // - Si no hay filtro pero existen datos filtrados, centrar en el mes del primer registro.
+    // - En otro caso usar `currentMonth`.
+    const displayMonth = useMemo(() => {
+        if (filters.dateStart) return filters.dateStart;
+
+        if (filteredData && filteredData.length > 0) {
+            const first = filteredData[0];
+            if (first && first.fecha_prestamo) {
+                const d = new Date(first.fecha_prestamo + "T00:00:00");
+                return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0);
+            }
+        }
+
+        return currentMonth;
+    }, [filters.dateStart, filteredData, currentMonth]);
+
+    const safeDisplayMonth = useMemo(() => clampMonth(displayMonth), [displayMonth, minAllowedMonth]);
 
     const totals = useMemo(() => {
         const totalPendiente = filteredData
@@ -436,18 +536,39 @@ export const DeudasPorCobrar = () => {
                                     Lista de Deudas por Cobrar
                                 </h2>
                                 <div className="relative ml-auto flex w-full shrink-0 flex-nowrap items-center justify-end gap-[16px] sm:w-auto">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowFilterPanel(!showFilterPanel)}
-                                        className="flex gap-[8px] items-center shrink-0 flex-nowrap cursor-pointer transition-opacity hover:opacity-70"
-                                    >
-                                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#434654]">
-                                            <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                        </svg>
-                                        <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] text-center whitespace-nowrap">
-                                            Filtrar
-                                        </span>
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => changeMonth(-1)}
+                                            disabled={Boolean(minAllowedMonth && safeDisplayMonth.getTime() <= minAllowedMonth.getTime())}
+                                            className="rounded-full border border-[rgba(195,198,214,0.3)] px-3 py-2 hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            &lsaquo;
+                                        </button>
+                                        <div className="px-3 py-2 rounded-full bg-[#f2f3ff] text-sm font-semibold">
+                                            {safeDisplayMonth.toLocaleString("es-PE", { month: "long", year: "numeric" })}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => changeMonth(1)}
+                                            className="rounded-full border border-[rgba(195,198,214,0.3)] px-3 py-2 hover:bg-[#f2f3ff]"
+                                        >
+                                            &rsaquo;
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowFilterPanel(!showFilterPanel)}
+                                            className="flex gap-[8px] items-center shrink-0 flex-nowrap cursor-pointer transition-opacity hover:opacity-70 ml-2"
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#434654]">
+                                                <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                            <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] text-center whitespace-nowrap">
+                                                Filtrar
+                                            </span>
+                                        </button>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={handleExportPDF}

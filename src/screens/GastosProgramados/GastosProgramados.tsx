@@ -2,6 +2,7 @@
 import { DashboardSidebar } from "../../components/DashboardSidebar.tsx";
 import { AppTopBar } from "../../components/AppTopBar";
 import { FilterPanelGastos } from "../../components/FilterPanelGastos";
+import { useAuth } from "../../hooks/useAuth";
 import { useScheduledTransactions } from "../../hooks/useScheduledTransactions";
 import { getAuthErrorMessage } from "../../services/auth.service";
 import type { ScheduledTransaction } from "../../types/scheduledTransaction";
@@ -224,6 +225,7 @@ const ScheduledExpenseModal = ({
 
 // Gestiona la lista, filtros, edición y exportación de gastos programados.
 export const GastosProgramados = () => {
+    const { user } = useAuth();
     const {
         data,
         loading,
@@ -241,7 +243,45 @@ export const GastosProgramados = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState<GastosFilters>(INITIAL_GASTOS_FILTERS);
     const [showFilterPanel, setShowFilterPanel] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
     const pageSize = 4;
+
+    const minAllowedMonth = useMemo(() => {
+        if (!user?.created_at) {
+            return null;
+        }
+
+        const createdAt = new Date(user.created_at);
+        if (Number.isNaN(createdAt.getTime())) {
+            return null;
+        }
+
+        return new Date(createdAt.getFullYear(), createdAt.getMonth(), 1, 0, 0, 0);
+    }, [user?.created_at]);
+
+    const clampMonth = (month: Date) => {
+        if (!minAllowedMonth) {
+            return month;
+        }
+
+        return month.getTime() < minAllowedMonth.getTime() ? minAllowedMonth : month;
+    };
+
+    const safeCurrentMonth = useMemo(() => clampMonth(currentMonth), [currentMonth, minAllowedMonth]);
+
+    const changeMonth = (delta: number) => {
+        setCurrentPage(1);
+        setCurrentMonth((prev) => {
+            const firstDate = data && data.length > 0 && data[0].fecha_programada ? new Date(data[0].fecha_programada + "T00:00:00") : null;
+            const base = (filters.dateStart as Date) || firstDate || prev;
+            const d = new Date(base.getFullYear(), base.getMonth() + delta, 1);
+            const nextMonth = clampMonth(d);
+            const start = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 1, 0, 0, 0);
+            const end = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0, 23, 59, 59);
+            setFilters((prevFilters) => ({ ...prevFilters, dateStart: start, dateEnd: end }));
+            return nextMonth;
+        });
+    };
 
     const filteredData = useMemo(() => {
         return filterScheduledTransactions(data, filters);
@@ -630,18 +670,39 @@ export const GastosProgramados = () => {
                                 Lista de Gastos Programados
                             </h2>
                             <div className="relative ml-auto flex w-full shrink-0 flex-nowrap items-center justify-end gap-[16px] sm:w-auto">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowFilterPanel(!showFilterPanel)}
-                                    className="flex gap-[8px] items-center shrink-0 flex-nowrap cursor-pointer hover:opacity-70 transition-opacity"
-                                >
-                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#434654]">
-                                        <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                    </svg>
-                                    <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] text-center whitespace-nowrap">
-                                        Filtrar
-                                    </span>
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => changeMonth(-1)}
+                                        disabled={Boolean(minAllowedMonth && safeCurrentMonth.getTime() <= minAllowedMonth.getTime())}
+                                        className="rounded-full border border-[rgba(195,198,214,0.3)] px-3 py-2 hover:bg-[#f2f3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        &lsaquo;
+                                    </button>
+                                    <div className="px-3 py-2 rounded-full bg-[#f2f3ff] text-sm font-semibold">
+                                            {safeCurrentMonth.toLocaleString("es-PE", { month: "long", year: "numeric" })}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => changeMonth(1)}
+                                        className="rounded-full border border-[rgba(195,198,214,0.3)] px-3 py-2 hover:bg-[#f2f3ff]"
+                                    >
+                                        &rsaquo;
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowFilterPanel(!showFilterPanel)}
+                                        className="flex gap-[8px] items-center shrink-0 flex-nowrap cursor-pointer hover:opacity-70 transition-opacity ml-2"
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-[12px] w-[12px] text-[#434654]">
+                                            <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                        </svg>
+                                        <span className="flex h-[20px] justify-center items-center shrink-0 basis-auto [font-family:'Inter-Regular',Helvetica] text-[14px] font-semibold leading-[20px] text-[#434654] text-center whitespace-nowrap">
+                                            Filtrar
+                                        </span>
+                                    </button>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={handleExportPDF}
